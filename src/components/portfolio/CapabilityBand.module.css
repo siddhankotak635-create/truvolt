@@ -1,0 +1,96 @@
+.band {
+  max-width: var(--tv-container);
+  margin: 0 auto;
+  padding: 140px var(--tv-gutter) 120px;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 24px;
+  align-items: start;
+}
+.intro {
+  grid-column: 1 / span 5;
+  position: sticky;
+  top: 120px;
+}
+.kicker {
+  margin: 0 0 20px;
+  font-family: var(--tv-mono);
+  font-size: 12px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--tv-text-muted);
+}
+.band .title { margin: 0 0 24px; }
+.body {
+  margin: 0;
+  font-size: var(--tv-body);
+  line-height: 1.55;
+  color: var(--tv-text);
+  max-width: 40ch;
+}
+
+.cards {
+  grid-column: 7 / span 6;
+  display: grid;
+  gap: 12px;
+}
+.card {
+  border-radius: var(--tv-r-20);
+  background: #fff;
+  border: 1px solid var(--tv-line-08);
+  padding: 28px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: end;
+}
+.label {
+  margin: 0 0 8px;
+  font-family: var(--tv-mono);
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--tv-text-muted);
+}
+.value {
+  margin: 0;
+  font-size: clamp(28px, 2.8vw, 40px);
+  font-weight: 600;
+  letter-spacing: -.04em;
+  line-height: 1;
+}
+.note {
+  margin: 0;
+  font-size: 14px;
+  color: var(--tv-text);
+  text-align: right;
+  max-width: 22ch;
+}
+.range {
+  width: 200px;
+  height: 6px;
+  border-radius: var(--tv-r-pill);
+  background: rgba(22, 24, 25, .1);
+  overflow: hidden;
+}
+/* Final state in markup (reduced motion / no JS); GSAP animates 0% -> 100%. */
+.fill { height: 100%; width: 100%; background: var(--tv-ink); }
+
+.card.dark { background: var(--tv-ink); color: var(--tv-bg); border: 0; }
+.card.dark .label { color: var(--tv-on-dark-muted); }
+.card.dark .note { color: var(--tv-on-dark-soft); }
+
+@media (max-width: 1099px) {
+  .band { padding: 112px var(--tv-gutter) 96px; row-gap: 40px; }
+  .intro { grid-column: 1 / -1; position: static; }
+  .body { max-width: 60ch; }
+  .cards { grid-column: 1 / -1; }
+}
+
+@media (max-width: 767px) {
+  .band { padding: 80px var(--tv-gutter) 72px; row-gap: 32px; }
+  .body { font-size: 16px; }
+  .card { grid-template-columns: minmax(0, 1fr); padding: 24px; gap: 14px; }
+  .note { text-align: left; font-size: 15px; max-width: none; }
+  .range { width: 100%; }
+}

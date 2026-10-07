@@ -1,0 +1,196 @@
+/* Truvolt Home.dc.html FLAGSHIP SPEC (Engineering) */
+.section {
+  /* Inset panel: Flagship + Range form one dark block whose edges sit on the content
+   * edges. Flagship rounds the top corners, Range the bottom ones. */
+  margin-inline: var(--tv-inset);
+  border-radius: var(--tv-r-40) var(--tv-r-40) 0 0;
+}
+.inner {
+  max-width: var(--tv-container);
+  margin: 0 auto;
+  padding: calc(var(--tv-section) * .75) var(--tv-gutter);
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 24px;
+}
+.spec {
+  grid-column: 1 / span 5;
+  position: sticky;
+  top: 120px;
+  align-self: start;
+}
+.section .eyebrow { margin: 0 0 20px; }
+.title {
+  margin: 0 0 24px;
+  font-size: var(--tv-h2);
+  font-weight: 600;
+  letter-spacing: -.04em;
+  line-height: 1;
+  text-wrap: balance;
+}
+.lead {
+  margin: 0 0 36px;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--tv-on-dark-soft);
+  max-width: 42ch;
+}
+.list {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px 28px;
+  font-size: 15px;
+  border-top: 1px solid var(--tv-dline-18);
+  padding-top: 24px;
+}
+.row { display: contents; }
+.row dt { color: var(--tv-on-dark-muted); }
+.row dd { margin: 0; }
+
+/* ---- desktop sticky stage ---- */
+.stages {
+  grid-column: 7 / span 6;
+  position: relative;
+  height: 260vh;
+}
+.stage {
+  position: sticky;
+  top: 120px;
+  height: min(70vh, 760px);
+  border-radius: var(--tv-r-24);
+  overflow: hidden;
+  background: var(--tv-dark-2);
+}
+.stageImgs { position: absolute; inset: 0; }
+.stageImg { object-fit: cover; }
+.stages .stageImg:not([data-tv-stage="0"]) { opacity: 0; }
+.stageShade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(22, 24, 25, .45) 0%, rgba(22, 24, 25, 0) 30%, rgba(22, 24, 25, 0) 60%, rgba(22, 24, 25, .8) 100%);
+  pointer-events: none;
+}
+.chips {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  display: flex;
+  gap: 8px;
+}
+.chip {
+  padding: 8px 12px;
+  border-radius: var(--tv-r-pill);
+  background: rgba(22, 24, 25, .55);
+  color: var(--tv-bg);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  font-family: var(--tv-mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: background .4s, color .4s;
+}
+.chip[data-active] {
+  background: var(--tv-bg);
+  color: var(--tv-ink);
+}
+.stageFoot {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  color: var(--tv-bg);
+}
+.caption {
+  margin: 0;
+  font-size: clamp(18px, 1.6vw, 22px);
+  font-weight: 600;
+  letter-spacing: -.02em;
+  line-height: 1.2;
+  max-width: 26ch;
+}
+.bar {
+  flex: none;
+  width: 120px;
+  height: 2px;
+  background: rgba(220, 231, 243, .25);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.barFill {
+  height: 100%;
+  width: 0%;
+  background: var(--tv-bg);
+}
+
+/* ---- below desktop: stacked cards ---- */
+.cards { display: none; }
+
+/* Stacked card styles (shown below 1100px, and at every width under reduced motion / no JS) */
+.card {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  border-radius: var(--tv-r-24);
+  overflow: hidden;
+  background: var(--tv-dark-2);
+}
+.cardChip {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+}
+.cardCaption {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  color: var(--tv-bg);
+}
+
+/* Reduced motion or no JS (html.tv-motion is only set when JS runs with motion allowed):
+ * there is no scroll-driven stage swap, so show all three stages as stacked cards. */
+:global(html:not(.tv-motion)) .stages { display: none; }
+@media (min-width: 1100px) {
+  :global(html:not(.tv-motion)) .inner .cards {
+    grid-column: 7 / span 6;
+    display: grid;
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  :global(html:not(.tv-motion)) .card { aspect-ratio: 4 / 3; }
+}
+
+@media (max-width: 1099px) {
+  .spec {
+    grid-column: 1 / -1;
+    position: static;
+  }
+  .stages { display: none; }
+  .inner .cards {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 16px;
+    margin: 32px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+}
+@media (max-width: 767px) {
+  .section { border-radius: var(--tv-r-28) var(--tv-r-28) 0 0; }
+  .lead { font-size: 16px; }
+  .list { gap: 12px 20px; }
+  .card { aspect-ratio: 4 / 5; }
+  .cardChip { left: 16px; top: 16px; }
+  .cardCaption { left: 16px; right: 16px; bottom: 18px; font-size: 18px; }
+}
+@media (max-width: 419px) {
+  .card { aspect-ratio: 3 / 4; }
+}

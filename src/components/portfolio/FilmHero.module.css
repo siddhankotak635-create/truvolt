@@ -1,0 +1,470 @@
+.film {
+  --film-safe-x: max(48px, 6vw); /* caption safe area */
+  --film-safe-y: max(56px, 11svh);
+  position: relative;
+  height: 100svh;
+  overflow: hidden;
+}
+
+.copy {
+  position: absolute;
+  inset: 0 0 46svh; /* clears the card: 40svh tall + 4svh gap */
+  left: 0;
+  right: 0;
+  z-index: 2;
+  max-width: var(--tv-container);
+  margin: 0 auto;
+  padding: 100px var(--tv-gutter) 20px;
+  display: grid;
+  align-content: end;
+}
+.film .eyebrow { margin: 0 0 18px; }
+.title {
+  margin: 0;
+  font-size: clamp(36px, min(6.4vw, 9svh), 96px);
+  font-weight: 600;
+  letter-spacing: -.045em;
+  line-height: .94;
+  text-wrap: balance;
+  max-width: 14ch;
+}
+/* Receives focus (tabIndex -1) after a keyboard Skip; a heading needs no ring. */
+.title:focus { outline: none; }
+
+/* Centred with margin auto (not translateX) so GSAP can tween width/y freely. */
+.media {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  bottom: 4svh; /* svh, like the 100svh film, so the JS shrink lands on the same box; fully on screen so all four corners show */
+  width: var(--tv-content-w); /* starts at the content width, expands to full-bleed */
+  height: 40svh;
+  border-radius: var(--tv-r-28);
+  overflow: hidden;
+  background: var(--tv-dark-2);
+  z-index: 1;
+}
+.video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: contrast(1.08) saturate(.85) brightness(.92); /* cool, slightly desaturated grade */
+  transform-origin: 50% 50%; /* PortfolioMotion pushes in 1 -> 1.06 across the clip */
+}
+.shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(22, 24, 25, .5) 0%, rgba(22, 24, 25, .05) 35%, rgba(22, 24, 25, .15) 60%, rgba(22, 24, 25, .88) 100%);
+}
+/* Film grain: an feTurbulence tile on an oversized layer, jittered with transform steps (compositor only).
+   Visible (opacity ~.06) and running only while the story plays. */
+.grain {
+  position: absolute;
+  inset: -50%;
+  opacity: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  animation: grain .9s steps(1) infinite;
+  animation-play-state: paused;
+}
+.film[data-story] .grain { animation-play-state: running; }
+@keyframes grain {
+  0% { transform: translate(0, 0); }
+  12% { transform: translate(-3%, 2%); }
+  25% { transform: translate(2%, -4%); }
+  37% { transform: translate(-5%, -1%); }
+  50% { transform: translate(4%, 3%); }
+  62% { transform: translate(-1%, 5%); }
+  75% { transform: translate(3%, -2%); }
+  87% { transform: translate(-4%, 4%); }
+}
+/* Black for the opening fade-up and the dip at the end. */
+.black {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+}
+/* Scrim behind the Installed base text: the closing beat (motion) and the static fallback. */
+.dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(22, 24, 25, .5);
+  opacity: 0;
+}
+
+.text {
+  position: absolute;
+  inset: 0;
+  max-width: var(--tv-container);
+  margin: 0 auto;
+  padding: 0 var(--tv-gutter);
+  display: grid;
+  align-content: center;
+  color: var(--tv-bg);
+}
+.rule {
+  height: 1px;
+  background: rgba(220, 231, 243, .6);
+  transform-origin: left;
+  margin-bottom: 28px;
+}
+.textGrid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 24px;
+  align-items: start;
+}
+.term { grid-column: 1 / span 4; }
+.defs { grid-column: 6 / span 7; display: grid; gap: 10px; }
+.word {
+  margin: 0 0 6px;
+  font-size: clamp(24px, 2.4vw, 34px);
+  font-weight: 600;
+  letter-spacing: -.03em;
+}
+.phon {
+  margin: 0;
+  font-family: var(--tv-mono);
+  font-size: 14px;
+  color: var(--tv-on-dark-muted);
+}
+.def {
+  margin: 0;
+  font-size: clamp(24px, 3vw, 46px);
+  font-weight: 500;
+  letter-spacing: -.035em;
+  line-height: 1.08;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, .5);
+}
+.defSoft { color: var(--tv-on-dark-soft); }
+.defMuted { color: var(--tv-on-dark-muted); }
+
+.strip {
+  position: absolute;
+  z-index: 3;
+  left: 24px;
+  right: 24px;
+  bottom: 20px;
+  display: none; /* static fallback only; the full-screen story has no on-screen furniture but Skip */
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--tv-on-dark-muted);
+  font-family: var(--tv-mono);
+  font-size: 10px;
+  line-height: 14px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+}
+/* Static-fallback Play control (reduced motion; WCAG 2.2.2). Hidden under html.tv-motion. */
+.play {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 16px 8px 14px;
+  border: 1px solid rgba(220, 231, 243, .35);
+  border-radius: var(--tv-r-pill);
+  background: rgba(22, 24, 25, .45);
+  color: var(--tv-bg);
+  font-family: var(--tv-mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.play[hidden] { display: none; }
+.play:hover { background: rgba(22, 24, 25, .7); }
+.play[aria-pressed='true'] { background: var(--tv-bg); border-color: var(--tv-bg); color: var(--tv-ink); }
+.playIcon {
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 5px 0 5px 8px;
+  border-color: transparent transparent transparent currentColor;
+}
+.play[aria-pressed='true'] .playIcon {
+  width: 8px;
+  height: 10px;
+  border-width: 0 3px;
+  border-color: currentColor;
+}
+:global(html.tv-motion) .play { display: none; }
+
+.credit { overflow: hidden; text-overflow: ellipsis; }
+.rate { flex: none; font-variant-numeric: tabular-nums; }
+
+/* ---- motion initial states (html.tv-motion is absent under reduced motion / no JS hint) ---- */
+:global(html.tv-motion) .media {
+  visibility: hidden;
+  animation: filmUnhide 0s linear 2.5s forwards;
+}
+:global(html.tv-motion) .text { opacity: 0; }
+:global(html.tv-motion) .rule { transform: scaleX(0); }
+:global(html.tv-motion) .text [data-tv-film-line] { opacity: 0; transform: translateY(24px); }
+@keyframes filmUnhide { to { visibility: visible; } }
+
+/* ---- tablet ---- */
+@media (min-width: 768px) and (max-width: 1099px) {
+  .term { grid-column: 1 / span 12; }
+  .defs { grid-column: 1 / span 12; }
+  .textGrid { gap: 18px; }
+}
+
+/* ---- mobile ---- */
+@media (max-width: 767px) {
+  .copy { padding-top: 96px; }
+  .rule { margin-bottom: 20px; }
+  .textGrid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .term, .defs { grid-column: auto; }
+  .def { font-size: clamp(22px, 6.4vw, 30px); }
+}
+
+/* ---- "Play film": replays the story from the ambient card ---- */
+.film .replay {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 50%; /* centre of the card */
+  translate: -50% -50%;
+  min-height: 44px;
+  gap: 10px;
+}
+.film .replay[hidden] { display: none; }
+.film .replay:focus-visible { outline: 2px solid var(--tv-bg); outline-offset: 3px; }
+
+/* ---- story beats: large editorial captions over the full-screen film (html.tv-motion) ----
+   Beats alternate between the lower-left and upper-right of a safe area, like title-sequence cards. */
+.story {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  visibility: hidden; /* PortfolioMotion shows it while the film holds the page */
+  opacity: 0;
+}
+/* soft vignette */
+.story::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 125% 100% at 50% 50%, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, .5) 100%);
+}
+.film ol.beats {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.beat {
+  position: absolute;
+  isolation: isolate;
+  display: grid;
+  gap: 18px;
+  max-width: min(17ch, 58vw);
+  font-size: clamp(44px, 5.4vw, 92px); /* sets the ch unit for max-width */
+  color: #fff;
+  opacity: 0;
+}
+.beat[data-pos='ll'] { left: var(--film-safe-x); bottom: var(--film-safe-y); justify-items: start; text-align: left; }
+.beat[data-pos='ur'] { right: var(--film-safe-x); top: var(--film-safe-y); justify-items: end; text-align: right; }
+/* a soft pool of shade behind each card so it reads on bright footage */
+.beat::before {
+  content: '';
+  position: absolute;
+  inset: -45% -35%;
+  z-index: -1;
+  background: radial-gradient(closest-side, rgba(10, 12, 14, .5), rgba(10, 12, 14, 0));
+}
+.beatMeta { display: flex; align-items: center; gap: 14px; }
+.beat[data-pos='ur'] .beatMeta { flex-direction: row-reverse; }
+.beatRule { width: 44px; height: 1px; background: var(--tv-accent-light); }
+.beatRule + .beatNum + .beatRule { display: none; } /* one hairline, on the outer side */
+.film .beatNum {
+  font-size: 13px;
+  letter-spacing: .28em;
+  color: rgba(255, 255, 255, .85);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, .6);
+}
+.beatText {
+  font-family: var(--tv-sans);
+  font-size: 1em;
+  font-weight: 500;
+  letter-spacing: -.035em;
+  line-height: 1.02;
+  text-wrap: balance;
+  text-shadow: 0 2px 30px rgba(0, 0, 0, .45);
+}
+
+/* Opening title card, centred in the frame before beat 01. */
+.titleCard {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  display: grid;
+  justify-items: center;
+  gap: 20px;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+  opacity: 0;
+}
+.titleCard { isolation: isolate; }
+.titleCard::before {
+  content: '';
+  position: absolute;
+  inset: -90% -30%;
+  z-index: -1;
+  background: radial-gradient(closest-side, rgba(10, 12, 14, .55), rgba(10, 12, 14, 0));
+}
+.titleMark {
+  font-family: var(--tv-mono);
+  font-size: clamp(14px, 1.2vw, 18px);
+  letter-spacing: .6em;
+  margin-right: -.6em; /* optical centring of the tracked caps */
+  text-transform: uppercase;
+}
+.titleRule { width: 56px; height: 1px; background: var(--tv-accent-light); }
+.titleSub {
+  font-size: clamp(24px, 2.6vw, 42px);
+  font-weight: 400;
+  letter-spacing: -.02em;
+  color: #fff;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, .5);
+}
+
+/* Skip: bottom-right on the film; only shown while the film holds the page. */
+.skip {
+  position: absolute;
+  right: max(24px, var(--tv-gutter));
+  bottom: 28px;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 18px;
+  border: 1px solid rgba(220, 231, 243, .3);
+  border-radius: var(--tv-r-pill);
+  background: rgba(22, 24, 25, .35);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: var(--tv-bg);
+  font-family: var(--tv-mono);
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .3s, color .3s, border-color .3s;
+}
+.skip[hidden] { display: none; }
+.skip:hover { background: var(--tv-bg); border-color: var(--tv-bg); color: var(--tv-ink); }
+.skip:focus-visible { outline: 2px solid var(--tv-bg); outline-offset: 3px; }
+
+@media (max-width: 767px) {
+  /* phones: every card sits lower-left, clear of Skip */
+  .beat,
+  .beat[data-pos='ur'] {
+    left: 24px;
+    right: 24px;
+    top: auto;
+    bottom: 112px;
+    max-width: none;
+    justify-items: start;
+    text-align: left;
+    gap: 14px;
+    font-size: clamp(32px, 9vw, 44px);
+  }
+  .beat[data-pos='ur'] .beatMeta { flex-direction: row; }
+  .skip { right: 16px; bottom: 24px; padding: 8px 14px; }
+  .strip { left: 16px; right: 16px; bottom: 16px; }
+}
+
+/* ---- static fallback (reduced motion or no JS: html.tv-motion absent) ----
+   No lock, no autoplay: poster + Play control, Installed base text over the media,
+   and the story beats as a list under it. */
+:global(html:not(.tv-motion)) .film { height: auto; overflow: visible; padding-bottom: 72px; }
+:global(html:not(.tv-motion)) .copy { position: relative; inset: auto; padding-top: 150px; padding-bottom: 40px; }
+:global(html:not(.tv-motion)) .media {
+  position: relative;
+  bottom: auto;
+  height: 88svh;
+  min-height: 520px;
+  width: 100%;
+  border-radius: 0;
+}
+:global(html:not(.tv-motion)) .text { opacity: 1; }
+:global(html:not(.tv-motion)) .dim { opacity: 1; }
+:global(html:not(.tv-motion)) .rule { transform: none; }
+:global(html:not(.tv-motion)) .story { position: relative; inset: auto; z-index: auto; visibility: visible; opacity: 1; pointer-events: auto; }
+:global(html:not(.tv-motion)) .story::before { content: none; }
+:global(html:not(.tv-motion)) .film .replay,
+:global(html:not(.tv-motion)) .beatRule { display: none; }
+:global(html:not(.tv-motion)) .strip { display: flex; }
+:global(html:not(.tv-motion)) .beat::before { content: none; }
+:global(html:not(.tv-motion)) .titleCard,
+:global(html:not(.tv-motion)) .grain,
+:global(html:not(.tv-motion)) .black { display: none; }
+:global(html:not(.tv-motion)) .film ol.beats {
+  position: relative;
+  inset: auto;
+  display: grid;
+  padding-inline: var(--tv-gutter);
+  width: 100%;
+  max-width: var(--tv-container);
+  margin: 0 auto;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 24px;
+  padding-top: 48px;
+  padding-bottom: 0;
+}
+:global(html:not(.tv-motion)) .beat,
+:global(html:not(.tv-motion)) .beat[data-pos] {
+  position: relative;
+  inset: auto;
+  max-width: none;
+  font-size: inherit;
+  grid-area: auto;
+  align-self: start;
+  justify-items: start;
+  text-align: left;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--tv-line-12);
+  color: var(--tv-ink);
+  opacity: 1;
+}
+:global(html:not(.tv-motion)) .film .beatNum { color: var(--tv-text-muted); text-shadow: none; }
+:global(html:not(.tv-motion)) .beatText { max-width: none; font-size: clamp(18px, 1.5vw, 22px); font-weight: 500; letter-spacing: -.02em; line-height: 1.25; text-shadow: none; }
+@media (max-width: 1099px) {
+  :global(html:not(.tv-motion)) .film ol.beats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 767px) {
+  :global(html:not(.tv-motion)) .copy { padding-top: 120px; }
+  :global(html:not(.tv-motion)) .media { height: auto; min-height: 80svh; width: 100%; }
+  :global(html:not(.tv-motion)) .text { padding-block: 48px 64px; }
+  :global(html:not(.tv-motion)) .film ol.beats { grid-template-columns: minmax(0, 1fr); gap: 0; padding-top: 32px; }
+  :global(html:not(.tv-motion)) .beat { padding-block: 16px; }
+  :global(html:not(.tv-motion)) .beatText { font-size: 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grain { animation: none; }
+}

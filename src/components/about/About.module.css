@@ -1,0 +1,292 @@
+/* About page (Truvolt About.dc.html). Desktop (>=1100px) matches the mockup. */
+
+/* ---------------------------------------------------------------- hero */
+.hero {
+  max-width: var(--tv-container);
+  margin: 0 auto;
+  padding: 170px var(--tv-gutter) 80px;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--tv-gap);
+  align-items: end;
+}
+.heroMain { grid-column: 1 / span 9; }
+.hero .heroEyebrow { margin: 0 0 28px; }
+.heroTitle {
+  margin: 0;
+  font-size: var(--tv-h1);
+  font-weight: 600;
+  letter-spacing: -.045em;
+  line-height: .94;
+  text-wrap: balance;
+  max-width: 16ch;
+}
+.heroMeta {
+  grid-column: 10 / span 3;
+  margin: 0;
+  font-family: var(--tv-mono);
+  font-size: 12px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--tv-text-muted);
+  line-height: 1.7;
+  text-align: right;
+}
+
+/* ---------------------------------------------------------------- legacy (pinned) */
+.legacyWrap { padding: 0 var(--tv-inset); } /* panel edges on the content edges */
+.legacy {
+  position: relative;
+  height: 100svh;
+  overflow: hidden;
+  background: var(--tv-ink);
+  color: var(--tv-bg);
+  border-radius: var(--tv-r-40);
+}
+.legacyImg {
+  position: absolute;
+  inset: -6% 0;
+  width: 100%;
+  height: 112%;
+  max-width: none;
+  object-fit: cover;
+  opacity: .45;
+}
+.legacyShade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(22, 24, 25, .6), rgba(22, 24, 25, .2) 40%, rgba(22, 24, 25, .85));
+}
+.legacyInner {
+  position: absolute;
+  inset: 0;
+  max-width: var(--tv-container);
+  margin: 0 auto;
+  padding: 120px var(--tv-gutter) 64px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.legacyLabel {
+  margin: 0;
+  font-family: var(--tv-mono);
+  font-size: 12px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--tv-on-dark-muted);
+}
+.legacyGrid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--tv-gap);
+  align-items: end;
+}
+.legacyYear {
+  grid-column: 1 / span 7;
+  margin: 0;
+  font-size: clamp(120px, 22vw, 320px);
+  font-weight: 600;
+  letter-spacing: -.07em;
+  line-height: .8;
+  font-variant-numeric: tabular-nums;
+}
+.legacyLines { grid-column: 8 / span 5; display: grid; gap: 14px; }
+/* Default (reduced motion / no JS): every line lit. AboutMotion dims the inactive ones to .6 (5.8:1 on the ink surface). */
+.legacyLine {
+  margin: 0;
+  font-size: clamp(18px, 1.6vw, 22px);
+  line-height: 1.45;
+  color: var(--tv-bg);
+  transition: opacity .4s;
+}
+
+/* ---------------------------------------------------------------- who we are */
+.who {
+  max-width: var(--tv-container);
+  margin: 0 auto;
+  padding: 160px var(--tv-gutter) 120px;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--tv-gap);
+}
+.whoCopy { grid-column: 1 / span 5; }
+.who .label { margin: 0 0 20px; }
+.h2 {
+  margin: 0 0 28px;
+  font-size: var(--tv-h2);
+  font-weight: 600;
+  letter-spacing: -.04em;
+  line-height: 1;
+  text-wrap: balance;
+}
+.wordsPara {
+  margin: 0 0 20px;
+  font-size: clamp(20px, 1.7vw, 24px);
+  line-height: 1.4;
+  font-weight: 500;
+  letter-spacing: -.01em;
+  max-width: 34ch;
+}
+.body {
+  margin: 0;
+  font-size: var(--tv-lead);
+  line-height: 1.55;
+  color: var(--tv-text);
+  max-width: 44ch;
+}
+.whoMedia {
+  grid-column: 7 / span 6;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-content: start;
+}
+.photo, .map {
+  position: relative;
+  border-radius: var(--tv-r-24);
+  overflow: hidden;
+  background: var(--tv-placeholder);
+}
+.photo { aspect-ratio: 16 / 9; }
+.map { aspect-ratio: 16 / 8; border: 1px solid rgba(22, 24, 25, .1); }
+.parallaxImg {
+  position: absolute;
+  inset: -8% 0;
+  width: 100%;
+  height: 116%;
+  max-width: none;
+  object-fit: cover;
+}
+.mapFrame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  filter: saturate(.85) contrast(1.03);
+}
+
+/* ---------------------------------------------------------------- standard marquee */
+/* Same as the global tv-marquee; declared locally because CSS Modules scopes animation names. */
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.standard {
+  max-width: var(--tv-container);
+  margin: 0 auto;
+  padding: 0 var(--tv-gutter) var(--tv-section);
+}
+.standardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 40px;
+}
+.standard .standardTitle { margin: 0; max-width: 16ch; }
+.standardLede {
+  margin: 0;
+  font-size: var(--tv-body);
+  line-height: 1.5;
+  color: var(--tv-text);
+  max-width: 36ch;
+}
+/* Keyboard/pointer pause for the marquee: subtle mono label, visible in the gutter. */
+.marqueeToggle {
+  display: block;
+  margin: -16px 0 12px;
+  padding: 6px 0;
+  background: none;
+  border: 0;
+  text-align: left;
+  font-family: var(--tv-mono);
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--tv-text-muted);
+  cursor: pointer;
+}
+.marqueeToggle:hover { color: var(--tv-ink); }
+.marqueeToggle[aria-pressed='true'] { color: var(--tv-accent); }
+@media (pointer: coarse) { .marqueeToggle { min-height: 44px; } }
+@media (prefers-reduced-motion: reduce) { .marqueeToggle { display: none; } }
+.marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  margin: 0 calc(-1 * var(--tv-gutter));
+  padding: 8px 0;
+}
+.track {
+  display: flex;
+  gap: 16px;
+  width: max-content;
+  padding: 0 8px;
+  animation: marquee 60s linear infinite;
+  -webkit-tap-highlight-color: transparent;
+}
+.track.paused { animation-play-state: paused; }
+@media (hover: hover) {
+  .track:hover { animation-play-state: paused; }
+}
+.point {
+  flex: none;
+  width: min(360px, 80vw);
+  border-radius: var(--tv-r-22);
+  background: #fff;
+  border: 1px solid var(--tv-line-08);
+  padding: 28px;
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 24px;
+  transition: transform .4s, border-color .4s;
+}
+@media (hover: hover) {
+  .point:hover { transform: translateY(-4px); border-color: rgba(22, 24, 25, .3); }
+}
+.pointN { font-family: var(--tv-mono); font-size: 12px; color: var(--tv-text-muted); }
+.pointTitle { margin: 0 0 10px; font-size: 22px; font-weight: 600; letter-spacing: -.025em; line-height: 1.15; }
+.pointBody { margin: 0; font-size: 15px; line-height: 1.5; color: var(--tv-text); }
+
+/* Reduced motion: no marquee; the nine cards become a scrollable rail. */
+@media (prefers-reduced-motion: reduce) {
+  .marquee { overflow-x: auto; scrollbar-width: none; }
+  .track { animation: none; padding: 0 var(--tv-gutter); }
+  .dup { display: none; }
+}
+
+/* ---------------------------------------------------------------- tablet */
+@media (max-width: 1099px) {
+  .heroMain { grid-column: 1 / span 8; }
+  .heroMeta { grid-column: 9 / span 4; }
+  .legacyYear { grid-column: 1 / -1; }
+  .legacyLines { grid-column: 1 / -1; max-width: 640px; }
+  .legacyInner { padding-top: 112px; }
+  .who { padding-top: var(--tv-section); padding-bottom: 96px; }
+  .whoCopy { grid-column: 1 / -1; }
+  .whoMedia { grid-column: 1 / -1; margin-top: 24px; }
+  .body, .wordsPara { max-width: 60ch; }
+}
+
+/* ---------------------------------------------------------------- mobile */
+@media (max-width: 767px) {
+  .hero { padding: 128px var(--tv-gutter) 56px; }
+  .heroMain, .heroMeta { grid-column: 1 / -1; }
+  .heroMeta { text-align: left; margin-top: 8px; }
+  .hero .heroEyebrow { margin-bottom: 20px; }
+
+  .legacy { border-radius: var(--tv-r-28); }
+  .legacyInner { padding: 96px var(--tv-gutter) 40px; }
+  .legacyGrid { gap: 20px; }
+  .legacyYear { font-size: clamp(96px, 30vw, 160px); }
+  .legacyLines { gap: 12px; }
+  .legacyLine { font-size: 16px; }
+
+  .who { padding-bottom: 80px; }
+  .map { aspect-ratio: 4 / 3; }
+
+  .standardHead { margin-bottom: 28px; }
+  .point { padding: 24px; min-height: 240px; }
+  .pointTitle { font-size: 20px; }
+}

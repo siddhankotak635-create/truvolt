@@ -1,0 +1,350 @@
+/* Quality page (Truvolt Quality.dc.html). Desktop (>=1100px) matches the mockup. */
+
+/* ---------------------------------------------------------------- hero */
+.hero {
+  max-width: var(--tv-container);
+  margin: 0 auto;
+  padding: 170px var(--tv-gutter) 80px;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--tv-gap);
+  align-items: end;
+}
+.heroMain { grid-column: 1 / span 8; }
+.hero .heroEyebrow { margin: 0 0 28px; }
+.heroTitle {
+  margin: 0;
+  font-size: var(--tv-h1);
+  font-weight: 600;
+  letter-spacing: -.045em;
+  line-height: .94;
+  text-wrap: balance;
+  max-width: 14ch;
+}
+.heroLede {
+  grid-column: 9 / span 4;
+  margin: 0;
+  font-size: var(--tv-lead);
+  line-height: 1.5;
+  color: var(--tv-text);
+}
+
+/* ---------------------------------------------------------------- test bay */
+.bayWrap { padding: 0 var(--tv-inset); } /* panel edges on the content edges */
+.bay {
+  position: relative;
+  background: var(--tv-ink);
+  color: var(--tv-bg);
+  border-radius: var(--tv-r-40);
+  overflow: clip;
+}
+.bayGrid {
+  max-width: var(--tv-container);
+  margin: 0 auto;
+  padding: 72px var(--tv-gutter) 56px;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--tv-gap);
+  align-items: center;
+}
+.bayCopy { grid-column: 1 / span 5; display: grid; gap: 0; max-height: 100%; }
+.bay .bayLabel { margin: 0 0 20px; }
+.bayTitle {
+  margin: 0 0 18px;
+  font-size: clamp(26px, min(4.2vw, 6.2svh), 58px);
+  font-weight: 600;
+  letter-spacing: -.04em;
+  line-height: 1;
+  text-wrap: balance;
+}
+.bayLede {
+  margin: 0 0 22px;
+  font-size: clamp(14px, 1.9svh, 17px);
+  line-height: 1.5;
+  color: var(--tv-on-dark-soft);
+  max-width: 40ch;
+}
+.reading {
+  border-radius: var(--tv-r-20);
+  border: 1px solid var(--tv-dline-16);
+  padding: clamp(14px, 2.4svh, 24px) 22px;
+  background: rgba(220, 231, 243, .03);
+}
+.readingLabel {
+  margin: 0 0 14px;
+  font-family: var(--tv-mono);
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--tv-on-dark-muted);
+}
+.readingValue {
+  margin: 0;
+  font-family: var(--tv-mono);
+  font-size: clamp(30px, min(4.4vw, 6.5svh), 64px);
+  font-weight: 500;
+  letter-spacing: -.04em;
+  line-height: 1;
+}
+.readingUnit { font-size: .4em; color: var(--tv-on-dark-muted); margin-left: .2em; }
+.barTrack {
+  margin-top: 18px;
+  height: 2px;
+  background: rgba(220, 231, 243, .14);
+  border-radius: 2px;
+  overflow: hidden;
+}
+/* Full by default (reduced motion); QualityMotion sweeps it 0 → 100% per test. */
+.bar { height: 100%; width: 100%; background: var(--tv-bg); }
+.status {
+  margin: 14px 0 0;
+  font-family: var(--tv-mono);
+  font-size: 12px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--tv-accent-light);
+}
+.listClip {
+  grid-column: 7 / span 6;
+  height: min(70svh, 640px);
+  position: relative;
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
+}
+/* .listClip prefix: beats the global `ol[class] { padding: 0 }` reset. */
+.listClip .list {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  margin: 0;
+  padding: 34% 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  will-change: transform;
+}
+/* Opacity 1 by default (reduced motion); QualityMotion dims inactive tests. */
+.test {
+  padding: 28px 28px 26px;
+  border-radius: var(--tv-r-20);
+  border: 1px solid rgba(220, 231, 243, .14);
+  background: var(--tv-dark-3);
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  grid-template-areas: 'n body where';
+  gap: 18px;
+  align-items: start;
+  transition: opacity .4s, border-color .4s;
+}
+.testN { grid-area: n; font-family: var(--tv-mono); font-size: 12px; color: var(--tv-on-dark-muted); padding-top: 4px; }
+.testBody { grid-area: body; }
+.testTitle { margin: 0 0 8px; font-size: 22px; font-weight: 600; letter-spacing: -.025em; }
+.testText { margin: 0; font-size: 15px; line-height: 1.5; color: var(--tv-on-dark-soft); }
+.testWhere {
+  grid-area: where;
+  font-family: var(--tv-mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--tv-on-dark-muted);
+  padding-top: 5px;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- stats */
+.stats {
+  max-width: var(--tv-container);
+  margin: 0 auto;
+  padding: 140px var(--tv-gutter) 120px;
+}
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid var(--tv-line-18);
+}
+/* Dividers are set per layout (4 / 2×2 / 1 column) instead of hardcoded per item. */
+.stat { padding: 32px 24px 0; border-right: 1px solid var(--tv-line-12); }
+.stat:first-child { padding-left: 0; }
+.stat:last-child { padding-right: 0; padding-left: 24px; border-right: 0; }
+.statNum { margin: 0; font-size: clamp(48px, 5.5vw, 80px); font-weight: 600; letter-spacing: -.05em; line-height: 1; }
+.statLabel {
+  margin: 14px 0 0;
+  font-family: var(--tv-mono);
+  font-size: 12px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--tv-text-muted);
+  line-height: 1.6;
+}
+
+/* ---------------------------------------------------------------- quality system */
+.system {
+  max-width: var(--tv-container);
+  margin: 0 auto;
+  padding: 0 var(--tv-gutter) var(--tv-section);
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--tv-gap);
+}
+.systemCopy { grid-column: 1 / span 5; }
+.system .label { margin: 0 0 20px; }
+.h2 {
+  margin: 0 0 28px;
+  font-size: var(--tv-h2);
+  font-weight: 600;
+  letter-spacing: -.04em;
+  line-height: 1;
+  text-wrap: balance;
+}
+.wordsPara {
+  margin: 0 0 20px;
+  font-size: clamp(20px, 1.7vw, 24px);
+  line-height: 1.4;
+  font-weight: 500;
+  letter-spacing: -.01em;
+  max-width: 34ch;
+}
+.body { margin: 0; font-size: var(--tv-lead); line-height: 1.55; color: var(--tv-text); max-width: 44ch; }
+.systemMedia { grid-column: 7 / span 6; display: grid; gap: 14px; align-content: start; }
+.photo {
+  position: relative;
+  border-radius: var(--tv-r-24);
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  background: var(--tv-placeholder);
+}
+.parallaxImg {
+  position: absolute;
+  inset: -8% 0;
+  width: 100%;
+  height: 116%;
+  max-width: none;
+  object-fit: cover;
+}
+.pillars {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.pillar {
+  border-radius: var(--tv-r-20);
+  padding: 24px;
+  background: #fff;
+  border: 1px solid var(--tv-line-08);
+}
+.pillar.pillarDark { background: var(--tv-ink); color: var(--tv-bg); border-color: var(--tv-ink); }
+.pillarN { margin: 0 0 10px; font-family: var(--tv-mono); font-size: 11px; color: var(--tv-text-muted); }
+.pillarDark .pillarN { color: var(--tv-on-dark-muted); }
+.pillarTitle { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -.02em; line-height: 1.2; }
+
+/* ---------------------------------------------------------------- standards */
+.standards {
+  max-width: var(--tv-container);
+  margin: 0 auto;
+  padding: 0 var(--tv-gutter) var(--tv-section);
+}
+.standardsHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 40px;
+}
+.standards .standardsTitle { margin: 0; max-width: 16ch; }
+.standardsLede { margin: 0; font-size: var(--tv-body); line-height: 1.5; color: var(--tv-text); max-width: 36ch; }
+
+/* ---------------------------------------------------------------- tablet + mobile shared */
+@media (max-width: 1099px) {
+  .heroMain { grid-column: 1 / -1; }
+  .heroLede { grid-column: 1 / span 9; max-width: 52ch; }
+
+  .bayCopy { grid-column: 1 / span 6; }
+  .listClip { grid-column: 7 / span 6; }
+  .test {
+    grid-template-columns: 1fr auto;
+    grid-template-areas: 'n where' 'body body';
+    gap: 12px 16px;
+    padding: 22px;
+  }
+  .testN, .testWhere { padding-top: 0; }
+  .testTitle { font-size: 20px; }
+
+  .stats { padding: 112px var(--tv-gutter) 96px; }
+  .statsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat,
+  .stat:first-child,
+  .stat:last-child { padding: 32px 0 32px; border-right: 0; }
+  .stat:nth-child(odd) { padding-right: 24px; border-right: 1px solid var(--tv-line-12); }
+  .stat:nth-child(even) { padding-left: 24px; }
+  .stat:nth-child(n + 3) { border-top: 1px solid var(--tv-line-12); }
+
+  .systemCopy, .systemMedia { grid-column: 1 / -1; }
+  .systemMedia { margin-top: 24px; }
+  .body, .wordsPara { max-width: 60ch; }
+}
+
+/* ---------------------------------------------------------------- mobile: no pin */
+@media (max-width: 767px) {
+  .hero { padding: 128px var(--tv-gutter) 56px; }
+  .heroLede { grid-column: 1 / -1; margin-top: 8px; }
+  .hero .heroEyebrow { margin-bottom: 20px; }
+
+  .bay { border-radius: var(--tv-r-28); }
+  .bayGrid { display: block; padding: 56px var(--tv-gutter) 40px; }
+  /* display:contents lets the reading card stick across the whole test list. */
+  .bayCopy { display: contents; }
+  .bayTitle { font-size: var(--tv-h2); }
+  .bayLede { font-size: 16px; }
+  .reading {
+    position: sticky;
+    top: 80px;
+    z-index: 2;
+    background: var(--tv-dark-2);
+    box-shadow: 0 16px 32px rgba(22, 24, 25, .45);
+  }
+  .readingValue { font-size: 40px; }
+  .listClip {
+    height: auto;
+    margin-top: 16px;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .listClip .list { position: static; padding: 0; will-change: auto; }
+
+  .statsGrid { grid-template-columns: 1fr; }
+  .stat,
+  .stat:first-child,
+  .stat:last-child,
+  .stat:nth-child(odd),
+  .stat:nth-child(even) { padding: 28px 0; border-right: 0; }
+  .stat:nth-child(n + 2) { border-top: 1px solid var(--tv-line-12); }
+  .stats { padding: 80px var(--tv-gutter) 72px; }
+
+  .pillars { grid-template-columns: 1fr; }
+  .standardsHead { margin-bottom: 28px; }
+}
+
+/* ---------------------------------------------------------------- reduced motion / no JS
+ * No pin and no list translate, so show the whole test list in normal flow (as on mobile).
+ * html.tv-motion is added by the layout's head script only when JS runs without reduced
+ * motion, so the :not() rule also covers the no-JS case. */
+@media (prefers-reduced-motion: reduce) {
+  .listClip {
+    height: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .listClip .list { position: static; padding: 0; will-change: auto; }
+}
+:global(html:not(.tv-motion)) .listClip {
+  height: auto;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+:global(html:not(.tv-motion)) .listClip .list { position: static; padding: 0; will-change: auto; }

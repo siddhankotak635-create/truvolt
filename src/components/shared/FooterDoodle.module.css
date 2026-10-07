@@ -1,0 +1,51 @@
+.doodle {
+  --doodle-stroke: 1.25px;
+  position: relative;
+  width: 100%;
+  pointer-events: none;
+  user-select: none;
+}
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: hidden;
+}
+.ink {
+  stroke: rgba(220, 231, 243, .9);
+  stroke-width: var(--doodle-stroke);
+}
+.dim {
+  stroke: rgba(220, 231, 243, .32);
+  stroke-width: calc(var(--doodle-stroke) * .8);
+}
+/* oil level inside the conservator */
+.oil { opacity: .5; }
+/* idle-loop current dashes; hidden in the static drawing, faded in by JS */
+.flow {
+  stroke: var(--tv-accent-light);
+  stroke-width: calc(var(--doodle-stroke) * 1.6);
+}
+.flow path { opacity: 0; }
+.live { fill: var(--tv-accent-light); }
+.tip { fill: var(--tv-accent-light); }
+.halo {
+  fill: var(--tv-accent-light);
+  opacity: .18;
+}
+.label {
+  font-family: var(--tv-mono);
+  font-size: 10px;
+  letter-spacing: .14em;
+  fill: rgba(220, 231, 243, .6);
+}
+
+@media (max-width: 1099px) {
+  .svg { max-height: 260px; }
+}
+@media (max-width: 767px) {
+  /* scaled down to ~60%: keep the line weight visually the same */
+  .doodle { --doodle-stroke: 1.9px; }
+  .label { font-size: 15px; }
+  .svg { max-height: 220px; }
+}

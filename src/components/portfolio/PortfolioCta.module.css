@@ -1,0 +1,46 @@
+.section {
+  max-width: var(--tv-container);
+  margin: 0 auto;
+  padding: 0 var(--tv-gutter) 120px;
+}
+.card {
+  border-radius: var(--tv-r-32);
+  background: var(--tv-ink);
+  color: var(--tv-bg);
+  padding: 56px 48px;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 32px;
+  align-items: end;
+}
+.copy { grid-column: 1 / span 8; }
+.actions { grid-column: 9 / span 4; display: flex; justify-content: flex-end; }
+.kicker {
+  margin: 0 0 20px;
+  font-family: var(--tv-mono);
+  font-size: 12px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--tv-on-dark-muted);
+}
+.title {
+  margin: 0;
+  font-size: clamp(32px, 4.4vw, 60px);
+  font-weight: 600;
+  letter-spacing: -.04em;
+  line-height: .98;
+  text-wrap: balance;
+}
+
+@media (max-width: 1099px) {
+  .copy, .actions { grid-column: 1 / -1; }
+  .actions { justify-content: flex-start; }
+  .card { gap: 28px; padding: 48px 40px; }
+}
+
+@media (max-width: 767px) {
+  .section { padding-bottom: 80px; }
+  .card { padding: 36px 24px; border-radius: var(--tv-r-28); gap: 24px; }
+  .title { font-size: clamp(28px, 7.6vw, 40px); }
+  .section .btn { white-space: normal; }
+}

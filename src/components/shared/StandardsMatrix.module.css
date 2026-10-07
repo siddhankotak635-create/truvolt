@@ -1,0 +1,105 @@
+.wrap {
+  border-radius: var(--tv-r-24);
+  overflow: hidden;
+  border: 1px solid rgba(22, 24, 25, .14);
+  background: #fff;
+}
+.table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+/* 1.4fr repeat(4, 1fr) → 1.4 / 5.4 */
+.colProduct { width: 25.926%; }
+
+.head th {
+  padding: 18px 16px;
+  text-align: center;
+  font-family: var(--tv-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--tv-text-muted);
+  border-bottom: 1px solid var(--tv-line-12);
+}
+.head .thProduct { padding: 18px 24px; text-align: left; }
+
+.row {
+  border-top: 1px solid var(--tv-line-08);
+  font-size: 15px;
+  transition: background .3s;
+}
+.row:hover { background: var(--tv-bg); }
+
+.product {
+  padding: 18px 24px;
+  text-align: left;
+  font-weight: 600;
+}
+.mark {
+  padding: 18px 16px;
+  text-align: center;
+  font-family: var(--tv-mono);
+  font-size: 12px;
+  letter-spacing: .06em;
+}
+.yes { color: var(--tv-ink); }
+.request { color: var(--tv-accent); }
+.na { color: rgba(22, 24, 25, .65); } /* 5.0:1 on #DCE7F3 */
+
+/* tablet: tighten cells */
+@media (max-width: 1099px) {
+  .head th { padding: 16px 10px; letter-spacing: .08em; }
+  .product { padding: 16px 18px; }
+  .mark { padding: 16px 10px; font-size: 11px; letter-spacing: .02em; }
+}
+
+/* mobile: each row is a stacked card */
+@media (max-width: 767px) {
+  .wrap { position: relative; border: 0; border-radius: 0; background: transparent; overflow: visible; }
+  .table, .table tbody, .row, .product, .mark { display: block; width: 100%; }
+  .table colgroup { display: none; }
+  .head {
+    position: absolute;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .table tbody { display: grid; gap: 12px; }
+  .row,
+  .head + tbody .row:first-child {
+    border: 1px solid rgba(22, 24, 25, .14);
+    border-radius: var(--tv-r-20);
+    background: #fff;
+    padding: 6px 0;
+  }
+  .row:hover { background: #fff; }
+  .product { padding: 14px 20px 10px; font-size: 17px; }
+  .mark {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 20px;
+    border-top: 1px solid var(--tv-line-08);
+    text-align: right;
+    font-size: 12px;
+  }
+  .mark::before {
+    content: attr(data-label);
+    font-family: var(--tv-mono);
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--tv-text-muted);
+    text-align: left;
+  }
+}

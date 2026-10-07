@@ -1,0 +1,129 @@
+.hero {
+  max-width: var(--tv-container);
+  margin: 0 auto;
+  padding: 40px var(--tv-gutter) 0;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--tv-gap);
+  align-items: stretch;
+}
+
+.copy {
+  grid-column: 1 / span 6;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 48px;
+  padding: 24px 0;
+}
+.hero .eyebrow { margin: 0 0 20px; }
+.title {
+  margin: 0;
+  font-size: clamp(44px, 5.6vw, 84px);
+  font-weight: 600;
+  letter-spacing: -.045em;
+  line-height: .94;
+  text-wrap: balance;
+}
+.lower {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding-top: 24px;
+  border-top: 1px solid var(--tv-line-18);
+}
+.lead {
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.5;
+  color: var(--tv-text);
+  max-width: 46ch;
+}
+.actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.actions .btn { padding: 14px 22px; font-size: 15px; }
+
+.meta {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding-top: 24px;
+  border-top: 1px solid var(--tv-line-18);
+}
+.meta dt {
+  margin: 0 0 6px;
+  font-family: var(--tv-mono);
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--tv-text-muted);
+}
+.meta dd {
+  margin: 0;
+  font-size: clamp(20px, 1.8vw, 26px);
+  font-weight: 600;
+  letter-spacing: -.03em;
+}
+
+.tilt { grid-column: 7 / span 6; perspective: 1400px; }
+.media {
+  position: relative;
+  border-radius: var(--tv-r-28);
+  overflow: hidden;
+  min-height: min(78vh, 760px);
+  height: 100%;
+  background: var(--tv-placeholder);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+/* Parallax wrapper (GSAP yPercent) — oversized so the drift never shows an edge. */
+.pan { position: absolute; left: 0; right: 0; top: -12%; height: 112%; }
+/* Local keyframes: CSS Modules renames animation names, so the global tv-kenburns can't be referenced here. Mockup values. */
+@keyframes kenburns { from { transform: scale(1.04); } to { transform: scale(1.12); } }
+.img { object-fit: cover; animation: kenburns 20s ease-in-out infinite alternate; }
+.shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(22, 24, 25, 0) 60%, rgba(22, 24, 25, .7) 100%);
+}
+.caption {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: 24px;
+  margin: 0;
+  color: var(--tv-bg);
+  font-family: var(--tv-mono);
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 1099px) {
+  .copy, .tilt { grid-column: 1 / -1; }
+  .copy { gap: 32px; padding: 16px 0 0; }
+  .media { min-height: 0; height: auto; aspect-ratio: 4 / 3; }
+}
+@media (max-width: 767px) {
+  .hero { padding-top: 28px; }
+  .copy { gap: 28px; }
+  .lead { font-size: 17px; }
+  .meta { gap: 12px; }
+  .meta dd { font-size: 17px; line-height: 1.2; }
+  .media { border-radius: var(--tv-r-22); }
+  .caption { left: 16px; right: 16px; bottom: 16px; font-size: 11px; }
+}
+@media (max-width: 419px) {
+  .meta { grid-template-columns: 1fr; gap: 0; padding-top: 8px; }
+  .meta > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--tv-line-12);
+  }
+  .meta > div:last-child { border-bottom: 0; }
+  .meta dt { margin: 0; }
+  .meta dd { text-align: right; }
+}

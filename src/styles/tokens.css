@@ -1,0 +1,118 @@
+/*
+ * Truvolt design tokens (values taken from the .dc.html mockups).
+ * Fonts: --font-sans / --font-mono are set by next/font on <html> (src/app/fonts.ts).
+ *
+ * Breakpoints (CSS custom properties cannot be used in media queries; use the literals):
+ *   desktop  >= 1100px   @media (min-width: 1100px)
+ *   tablet   768–1099px  @media (min-width: 768px) and (max-width: 1099px)
+ *   mobile   < 768px     @media (max-width: 767px)
+ *   small    < 420px     @media (max-width: 419px)
+ */
+:root {
+  /* ---- surfaces ---- */
+  --tv-bg: #DCE7F3;            /* light page surface */
+  --tv-ink: #161819;           /* ink / darkest surface */
+  --tv-placeholder: #c3d3e4;   /* image placeholder on light */
+  --tv-dark-2: #22272c;        /* dark card / image placeholder on dark */
+  --tv-dark-3: #1c2126;        /* dark gradient stop */
+  --tv-white: #fff;
+
+  /* ---- text on light ---- */
+  --tv-text: #2e3337;          /* body copy */
+  --tv-text-muted: #4c535a;    /* mono labels, captions */
+
+  /* ---- text on dark ---- */
+  --tv-on-dark-muted: #9fb2c7; /* mono labels on dark */
+  --tv-on-dark-soft: #c7d3e0;  /* body copy on dark */
+  --tv-on-dark: #e2eaf3;       /* bright copy on dark (card copy) */
+
+  /* ---- accents ---- */
+  --tv-accent: oklch(0.52 0.19 258);
+  --tv-accent-light: oklch(0.78 0.14 258);
+
+  /* ---- hairlines ---- */
+  --tv-line-08: rgba(22, 24, 25, .08);
+  --tv-line-12: rgba(22, 24, 25, .12);
+  --tv-line-18: rgba(22, 24, 25, .18);
+  --tv-line-25: rgba(22, 24, 25, .25);
+  --tv-dline-10: rgba(220, 231, 243, .1);
+  --tv-dline-16: rgba(220, 231, 243, .16);
+  --tv-dline-18: rgba(220, 231, 243, .18);
+  --tv-dline-25: rgba(220, 231, 243, .25);
+
+  /* ---- radii ---- */
+  --tv-r-pill: 999px;
+  --tv-r-40: 40px;
+  --tv-r-32: 32px;
+  --tv-r-28: 28px;
+  --tv-r-24: 24px;
+  --tv-r-22: 22px;
+  --tv-r-20: 20px;
+  --tv-r-14: 14px;
+
+  /* ---- shadows ---- */
+  --tv-shadow-nav: inset 0 1px 0 rgba(255, 255, 255, .9), inset 0 -1px 0 rgba(22, 24, 25, .05), 0 16px 40px rgba(22, 24, 25, .10);
+  --tv-shadow-nav-scrolled: inset 0 1px 0 rgba(255, 255, 255, .9), inset 0 -1px 0 rgba(22, 24, 25, .05), 0 18px 44px rgba(22, 24, 25, .16);
+  --tv-shadow-nav-ind: 0 2px 10px rgba(22, 24, 25, .14), inset 0 1px 0 rgba(255, 255, 255, 1);
+  --tv-glow-cta: 0 10px 24px rgba(40, 90, 220, .25);   /* dark button hover */
+  --tv-glow-light: 0 10px 24px rgba(0, 0, 0, .25);     /* light button hover (on dark) */
+  --tv-shadow-card-hover: 0 20px 40px rgba(22, 24, 25, .08);
+
+  /* ---- motion ---- */
+  --tv-ease: cubic-bezier(.2, .7, .2, 1);
+
+  /* ---- type ---- */
+  --tv-sans: var(--font-sans), 'Schibsted Grotesk', system-ui, sans-serif;
+  --tv-mono: var(--font-mono), 'JetBrains Mono', ui-monospace, monospace;
+  --tv-h1: clamp(40px, 6.4vw, 96px);
+  --tv-h1-ls: -.045em;
+  --tv-h1-lh: .94;
+  --tv-h2: clamp(34px, 4.2vw, 58px);
+  --tv-h2-ls: -.04em;
+  --tv-h2-lh: 1;
+  --tv-h2-cta: clamp(34px, 4.6vw, 64px);   /* CTA band headline */
+  --tv-lead: 18px;
+  --tv-body: 17px;
+
+  /* ---- layout ---- */
+  /* Fluid layout: content scales with the viewport. The gutter is 16px on phones,
+   * ~58px at 1440, ~77px at 1920 and 96px from 2400 up; the container cap only
+   * matters on ultra-wide screens. */
+  --tv-container: 2200px;
+  --tv-gutter: clamp(16px, 4vw, 96px);
+  /* Content width relative to the parent box: the nav pill and the inset dark panels
+   * use this (with margin-inline:auto) so their edges match the .container content edges. */
+  --tv-content-w: min(calc(var(--tv-container) - 2 * var(--tv-gutter)), calc(100% - 2 * var(--tv-gutter)));
+  /* Side inset that puts a full-width box's edges on the content edges. Use it as
+   * margin-inline / padding-inline of a box whose containing block spans the viewport
+   * (the inset dark panels and their wraps). */
+  --tv-inset: max(var(--tv-gutter), calc((100% - var(--tv-container)) / 2 + var(--tv-gutter)));
+  --tv-gap: 24px;
+  --tv-section: 160px;     /* vertical section padding: 160 → 112 → 80 */
+  --tv-nav-h: 64px;        /* approx. nav pill height incl. top offset clearance */
+}
+
+@media (max-width: 1099px) {
+  :root {
+    --tv-section: 112px;
+  }
+}
+
+@media (max-width: 767px) {
+  :root {
+    --tv-gap: 16px;
+    --tv-section: 80px;
+    --tv-h1: clamp(34px, 9.6vw, 96px);
+    --tv-h2: clamp(28px, 7.4vw, 58px);
+    --tv-h2-cta: clamp(28px, 7.6vw, 64px);
+    --tv-lead: 16px;
+    --tv-body: 16px;
+  }
+}
+
+@media (max-width: 419px) {
+  :root {
+    --tv-h1: clamp(32px, 9.4vw, 96px);
+    --tv-h2: clamp(26px, 7.4vw, 58px);
+  }
+}

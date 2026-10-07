@@ -1,0 +1,15 @@
+.hero { padding: 170px 0 80px; }
+.grid { align-items: end; }
+.copy { grid-column: 1 / span 8; }
+.eyebrow { margin-bottom: 28px; }
+.title { max-width: 14ch; }
+.aside { grid-column: 9 / span 4; font-size: var(--tv-lead); line-height: 1.5; color: var(--tv-text); }
+
+@media (max-width: 1099px) {
+  .hero { padding: 140px 0 64px; }
+  .copy, .aside { grid-column: 1 / -1; }
+}
+@media (max-width: 767px) {
+  .hero { padding: 120px 0 48px; }
+  .eyebrow { margin-bottom: 20px; }
+}

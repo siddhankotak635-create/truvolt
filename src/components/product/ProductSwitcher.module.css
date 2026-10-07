@@ -1,0 +1,61 @@
+/* In normal flow at the top of the page (scrolls away with it); the top padding
+ * clears the fixed nav on first load. */
+.subnav {
+  position: relative;
+  max-width: var(--tv-container);
+  margin: 0 auto;
+  padding: 96px var(--tv-gutter) 0;
+}
+/* Pre-hidden until the intro timeline sets its "from" state (mockup: subnav y -16 → 0). */
+:global(html.tv-motion) .subnav {
+  visibility: hidden;
+  animation: subnav-unhide 0s linear 2.5s forwards;
+}
+@keyframes subnav-unhide { to { visibility: visible; } }
+
+.row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  width: max-content;
+  max-width: 100%;
+  padding: 6px;
+  border-radius: var(--tv-r-pill);
+  background: rgba(220, 231, 243, .8);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--tv-line-08);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 14px;
+  border-radius: var(--tv-r-pill);
+  color: var(--tv-ink);
+  background: transparent;
+  white-space: nowrap;
+  transition: all .3s;
+}
+.pill:hover { color: var(--tv-ink); background: rgba(22, 24, 25, .06); }
+.row .on,
+.row .on:hover { background: var(--tv-ink); color: var(--tv-bg); }
+
+@media (max-width: 1099px) {
+  .subnav { padding-top: 92px; }
+}
+@media (max-width: 767px) {
+  .subnav { padding-top: 88px; }
+  .row {
+    flex-wrap: nowrap;
+    width: auto;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .row::-webkit-scrollbar { display: none; }
+  .pill { min-height: 44px; padding: 0 16px; flex: none; }
+}

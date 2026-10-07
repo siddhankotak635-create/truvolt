@@ -1,0 +1,325 @@
+.header { display: contents; }
+
+/* ---- ruled pill (mockup refs/mockups/pill-p1-ruled.html) ----
+   Skin variables: light by default, ink (.dark) over dark surfaces and while the sheet is open. */
+.nav {
+  --p-bg: #f4f8fc;
+  --p-line: rgba(22, 24, 25, .14);
+  --p-text: var(--tv-text);
+  --p-strong: var(--tv-ink);
+  --p-muted: var(--tv-text-muted);
+  --p-accent: var(--tv-accent);
+  --p-cap-bg: var(--tv-ink);
+  --p-cap-fg: #fff;
+  --p-cap-arrow: var(--tv-accent-light);
+  --p-logo: brightness(0);
+
+  position: fixed;
+  top: 16px;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  z-index: 50;
+  width: var(--tv-content-w); /* edges line up with the content edges */
+  height: 60px;
+  display: flex;
+  align-items: stretch;
+  overflow: hidden; /* the CONTACT cell fills the pill's rounded right end */
+  border-radius: var(--tv-r-pill);
+  background: var(--p-bg);
+  border: 1px solid var(--p-line);
+  box-shadow: 0 10px 30px rgba(22, 24, 25, .08); /* MotionProvider swaps a stronger one in past 80px */
+  color: var(--p-text);
+  transition: background-color .3s, border-color .3s, color .3s, translate .5s var(--tv-ease), visibility 0s;
+}
+.dark {
+  --p-bg: var(--tv-ink);
+  --p-line: rgba(220, 231, 243, .14);
+  --p-text: var(--tv-on-dark-soft);
+  --p-strong: #fff;
+  --p-muted: var(--tv-on-dark-muted);
+  --p-accent: var(--tv-accent-light);
+  --p-cap-bg: var(--tv-accent);
+  --p-cap-fg: #fff;
+  --p-cap-arrow: #fff;
+  --p-logo: none;
+}
+/* A page holding the viewport (Portfolio film) adds html.tv-nav-hidden. `translate` composes with the
+   GSAP transform used by hide-on-scroll; !important beats the inline visibility set by the provider. */
+:global(html.tv-nav-hidden) .nav {
+  translate: 0 -160%;
+  visibility: hidden !important;
+  transition: background-color .3s, border-color .3s, color .3s, translate .5s var(--tv-ease), visibility 0s linear .5s;
+}
+/* the pill clips overflow, so focus rings sit inside each cell */
+.nav :focus-visible {
+  outline: 2px solid var(--p-accent);
+  outline-offset: -4px;
+  border-radius: 4px;
+}
+
+/* ---- cell: logo + EST. plate (plate ≥1280) ---- */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: none;
+  padding: 0 24px 0 26px;
+  border-right: 1px solid var(--p-line);
+  transition: border-color .3s;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  flex: none;
+}
+.logoImg {
+  height: 26px;
+  width: auto;
+  display: block;
+  filter: var(--p-logo);
+  transition: filter .3s;
+}
+.plate {
+  display: none;
+  font-family: var(--tv-mono);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--p-muted);
+  transition: color .3s;
+}
+
+/* ---- cell: uppercase links + 3px accent bar on the pill's bottom edge ---- */
+.links {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+.ind {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 0;
+  background: var(--p-accent);
+  opacity: 0;
+  pointer-events: none;
+  transition: background-color .3s;
+}
+.link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--p-text);
+  transition: color .3s;
+}
+.link:hover, .active { color: var(--p-strong); }
+
+/* ---- cell: phone (≥1280) ---- */
+.phone {
+  display: none;
+  align-items: center;
+  flex: none;
+  padding: 0 22px;
+  border-left: 1px solid var(--p-line);
+  font-family: var(--tv-mono);
+  font-size: 12px;
+  letter-spacing: .06em;
+  white-space: nowrap;
+  color: var(--p-muted);
+  transition: color .3s, border-color .3s;
+}
+.nav .phone:hover { color: var(--p-strong); }
+
+@media (min-width: 1280px) {
+  .plate { display: block; }
+  .phone { display: flex; }
+}
+
+/* ---- CONTACT end-cap (Button magnet; two classes beat Button's .dark/.sm) ---- */
+.nav .cta {
+  flex: none;
+  align-self: stretch;
+  height: auto;
+  min-height: 0;
+  padding: 0 30px 0 26px;
+  gap: 10px;
+  border-radius: 0;
+  background: var(--p-cap-bg);
+  color: var(--p-cap-fg);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  transition: background-color .3s, color .3s;
+}
+.nav .cta > span:last-child { color: var(--p-cap-arrow); transition: color .3s; }
+.nav .cta:hover, .nav .cta:hover > span:last-child { color: #fff; box-shadow: none; }
+/* on the accent cap the fill sweeps in the light accent, so the label turns ink */
+.dark .cta { --tv-magnet-fill: var(--tv-accent-light); }
+@media (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .dark .cta:hover, .dark .cta:hover > span:last-child { color: var(--tv-ink); }
+}
+.nav .cta:focus-visible { outline-color: #fff; }
+
+/* ---- menu button cell (below 1100px) ---- */
+.menuBtn {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  min-width: 44px;
+  padding: 0 20px;
+  border: 0;
+  border-left: 1px solid var(--p-line);
+  background: transparent;
+  color: var(--p-strong);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  transition: color .3s, border-color .3s, background-color .3s;
+}
+.menuLabel { line-height: 1; }
+.burger {
+  position: relative;
+  width: 18px;
+  height: 12px;
+  display: block;
+}
+.burger span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1.5px;
+  margin-top: -.75px;
+  border-radius: 2px;
+  background: currentColor;
+  transition: transform .4s var(--tv-ease);
+}
+.burger span:first-child { transform: translateY(-3px); }
+.burger span:last-child { transform: translateY(3px); }
+.navOpen .burger span:first-child { transform: rotate(45deg); }
+.navOpen .burger span:last-child { transform: rotate(-45deg); }
+
+@media (max-width: 1099px) {
+  .nav { height: 56px; }
+  .nav .links, .plate, .phone { display: none; }
+  .brand { border-right: 0; padding-left: 20px; }
+  .menuBtn { display: inline-flex; }
+}
+/* phones: no room for the CONTACT cap, so the menu button becomes the ink end-cap */
+@media (max-width: 599px) {
+  .nav .cta { display: none; }
+  .menuBtn { border-left: 0; padding: 0 22px 0 20px; background: var(--p-cap-bg); color: var(--p-cap-fg); }
+}
+
+/* ---- full-screen sheet ---- */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 49;
+  display: flex;
+  background: var(--tv-ink);
+  color: var(--tv-bg);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  visibility: hidden;
+}
+.sheet[hidden] { display: none; }
+
+.sheetInner {
+  width: 100%;
+  max-width: var(--tv-container);
+  margin: 0 auto;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 40px;
+  padding: 112px var(--tv-gutter) 32px;
+}
+.sheetLinks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--tv-dline-10);
+}
+.sheetLinks li { border-bottom: 1px solid var(--tv-dline-10); overflow: hidden; }
+.sheetLink {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 16px 0;
+  font-size: clamp(28px, 7vw, 56px);
+  font-weight: 600;
+  letter-spacing: .01em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--tv-on-dark-soft);
+  transition: color .25s;
+}
+.sheetLink:hover { color: var(--tv-on-dark); }
+.sheetActive { color: #fff; }
+/* active marker: 3px accent bar on the row's bottom rule (echoes the pill) */
+.sheetActive::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 64px;
+  height: 3px;
+  background: var(--tv-accent-light);
+}
+.sheetNum {
+  font-family: var(--tv-mono);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: .14em;
+  color: var(--tv-on-dark-muted);
+  min-width: 2.2em;
+}
+.sheetFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+.sheetContact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: var(--tv-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--tv-on-dark-soft);
+}
+.sheetContact a { display: inline-flex; align-items: center; min-height: 32px; }
+.sheetContact a:hover { color: var(--tv-accent-light); }
+
+@media (min-width: 1100px) {
+  .sheet { display: none; }
+}
+
+@media (max-height: 560px) {
+  .sheetInner { padding-top: 88px; }
+  .sheetLink { font-size: clamp(24px, 6vw, 40px); padding: 10px 0; }
+}

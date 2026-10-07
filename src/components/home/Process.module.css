@@ -1,0 +1,393 @@
+/* Truvolt Home.dc.html PROCESS: timeline journey (#process) */
+.wrap { padding: 0 var(--tv-inset) 24px; } /* panel edges on the content edges */
+.section {
+  position: relative;
+  border-radius: var(--tv-r-40);
+  overflow: clip;
+}
+.inner {
+  max-width: var(--tv-container);
+  margin: 0 auto;
+  padding: calc(var(--tv-section) * .875) var(--tv-gutter) calc(var(--tv-section) * .9375);
+}
+.head {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 24px;
+  align-items: flex-end;
+  margin-bottom: 90px;
+}
+.headCopy { grid-column: 1 / span 7; }
+.section .eyebrow { margin: 0 0 20px; }
+.title {
+  margin: 0;
+  font-size: clamp(34px, 4.6vw, 66px);
+  font-weight: 600;
+  letter-spacing: -.04em;
+  line-height: .98;
+  text-wrap: balance;
+}
+.lead {
+  grid-column: 9 / span 4;
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--tv-on-dark-soft);
+}
+
+.timeline { position: relative; }
+/* Layers: panel < braid svg < steps (text, nodes, photos) < readout + head. The braid
+   passes behind the photos and under the nodes; the head rides above and fades out
+   while its tip is behind a photo. */
+.svg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.track,
+.glow,
+.phase,
+.pulse,
+.surge,
+.maskPath {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.track { stroke: rgba(220, 231, 243, .028); stroke-width: 40px; }
+.ticks { stroke: rgba(220, 231, 243, .12); stroke-width: 1.2px; stroke-linecap: round; }
+.glow { stroke: rgba(150, 185, 245, .07); stroke-width: 30px; }
+.maskPath { stroke-width: 64px; }
+.phase { transition: none; }
+.p0 { stroke-width: 13px; }
+.p1 { stroke: oklch(0.78 0.14 258); stroke-width: 4.5px; }
+.p2 { stroke: oklch(0.62 0.19 258 / .8); stroke-width: 4.5px; }
+/* Current: short bright dashes running forward along the drawn conductors. */
+.pulse {
+  stroke-dasharray: 14 226;
+  animation: tlCurrent 1.25s linear infinite;
+  animation-play-state: paused;
+}
+.u0 { stroke: rgba(255, 255, 255, .85); stroke-width: 3px; }
+.u1 { stroke: rgba(235, 243, 255, .8); stroke-width: 2px; animation-duration: 1s; animation-delay: -.35s; }
+.u2 { stroke: rgba(200, 220, 255, .7); stroke-width: 2px; animation-duration: 1.45s; animation-delay: -.8s; }
+.svg[data-live] .pulse { animation-play-state: running; }
+@keyframes tlCurrent {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -240; }
+}
+.surge { opacity: 0; stroke: #fff; }
+.s0 { stroke-width: 14px; }
+.s1 { stroke-width: 5.5px; }
+
+/* Head: bright core + halo ring, moved by transform only, centred on the backbone tip. */
+.unit {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 45%, #ffffff 0%, #eef4fc 45%, #cfdcf2 100%);
+  box-shadow: 0 0 0 3px rgba(22, 24, 25, .4), 0 0 16px 2px rgba(220, 231, 243, .7), 0 0 34px 6px rgba(120, 160, 235, .35);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.halo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+  border-radius: 50%;
+  border: 1px solid rgba(220, 231, 243, .35);
+  background: radial-gradient(circle, rgba(170, 195, 240, .16) 0%, rgba(170, 195, 240, 0) 70%);
+  animation: tlHalo 2.4s ease-in-out infinite;
+  animation-play-state: paused;
+}
+.unit[data-live] .halo { animation-play-state: running; }
+@keyframes tlHalo {
+  0%, 100% { transform: scale(.82); opacity: .95; }
+  50% { transform: scale(1.12); opacity: .4; }
+}
+
+/* Readout: one unit's journey in kV. In flow (sticky) by default and below desktop;
+   on desktop motion it floats beside the head ([data-float]). */
+.chip {
+  position: sticky;
+  top: 96px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  margin: 0 auto 24px;
+  padding: 7px 12px 7px 10px;
+  border: 1px solid var(--tv-dline-18);
+  border-radius: var(--tv-r-pill);
+  background: rgba(22, 24, 25, .82);
+  backdrop-filter: blur(6px);
+  font-family: var(--tv-mono);
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--tv-on-dark-soft);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.chip[data-float] {
+  position: absolute;
+  left: 0;
+  top: 0;
+  margin: 0;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.chipDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: oklch(0.78 0.14 258);
+  box-shadow: 0 0 8px oklch(0.78 0.14 258);
+}
+.chipMask {
+  display: inline-block;
+  overflow: hidden;
+  padding: 2px 0;
+  margin: -2px 0;
+}
+.chipStage { display: inline-block; color: var(--tv-on-dark); }
+.chipSep { color: var(--tv-on-dark-muted); }
+.chipKv { color: oklch(0.78 0.14 258); font-variant-numeric: tabular-nums; }
+.timeline .list {
+  position: relative;
+  z-index: 2;
+}
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 40px;
+}
+.step {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 24px;
+  align-items: center;
+  padding: 40px 0;
+}
+.nodeCol,
+.text,
+.media { grid-row: 1; }
+.nodeCol {
+  grid-column: 6 / span 2;
+  display: grid;
+  place-items: center;
+  align-self: center;
+}
+.node {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--tv-ink);
+  border: 1px solid var(--tv-dline-25);
+  display: grid;
+  place-items: center;
+  font-family: var(--tv-mono);
+  font-size: 14px;
+  color: var(--tv-on-dark-muted);
+  transition: background .5s, color .5s, border-color .5s, transform .5s, box-shadow .5s;
+}
+.node[data-active] {
+  background: var(--tv-bg);
+  color: var(--tv-ink);
+  border-color: var(--tv-bg);
+  transform: scale(1.1);
+  box-shadow: 0 0 28px rgba(140, 175, 240, .35);
+}
+/* Arrival: a concentric two-ring burst each time the head reaches the node. */
+.node::before,
+.node::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  border: 1px solid rgba(220, 231, 243, .75);
+  opacity: 0;
+  pointer-events: none;
+}
+.node::before { border-color: rgba(170, 195, 240, .6); }
+.node[data-active]::after { animation: tlArrive 1s cubic-bezier(.2, .7, .2, 1) 1; }
+.node[data-active]::before { animation: tlArrive2 1.3s cubic-bezier(.2, .7, .2, 1) .12s 1 both; }
+@keyframes tlArrive {
+  0% { transform: scale(1); opacity: .9; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+@keyframes tlArrive2 {
+  0% { transform: scale(1); opacity: .7; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+.text {
+  align-self: center;
+  display: grid;
+  gap: 18px;
+}
+.even .text {
+  grid-column: 1 / span 5;
+  text-align: right;
+  justify-items: end;
+}
+.odd .text { grid-column: 8 / span 5; }
+.even .media { grid-column: 8 / span 5; }
+.odd .media { grid-column: 1 / span 5; }
+
+.label {
+  margin: 0;
+  font-family: var(--tv-mono);
+  font-size: 12px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--tv-on-dark-muted);
+}
+.stepTitle {
+  margin: 0;
+  font-size: clamp(28px, 3vw, 44px);
+  font-weight: 600;
+  letter-spacing: -.035em;
+  line-height: 1.02;
+  text-wrap: balance;
+}
+.copy {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--tv-on-dark-soft);
+  max-width: 40ch;
+}
+.media {
+  position: relative;
+  border-radius: var(--tv-r-24);
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  background: var(--tv-dark-2);
+}
+.img {
+  position: absolute;
+  inset: -6% 0;
+  width: 100%;
+  max-width: none;
+  height: 112%;
+  object-fit: cover;
+}
+.mediaShade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(22, 24, 25, 0) 60%, rgba(22, 24, 25, .5) 100%);
+}
+.stage {
+  position: absolute;
+  left: 20px;
+  bottom: 18px;
+  font-family: var(--tv-mono);
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--tv-bg);
+}
+
+/* ---- below desktop: wave on the left edge (x = node centre ≈ 32px) ---- */
+@media (max-width: 1099px) {
+  .head { margin-bottom: 64px; }
+  .headCopy { grid-column: 1 / -1; }
+  .lead { grid-column: 1 / span 9; }
+  .list { gap: 24px; }
+  .step {
+    grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1fr);
+    gap: 28px;
+    padding: 24px 0;
+    align-items: center;
+  }
+  .nodeCol { grid-column: 1; grid-row: 1; }
+  .even .text,
+  .odd .text {
+    grid-column: 2;
+    text-align: left;
+    justify-items: start;
+  }
+  .even .media,
+  .odd .media { grid-column: 3; }
+  /* Readout as a compact gauge riding the node column, so it never covers the copy. */
+  .chip {
+    flex-direction: column;
+    gap: 5px;
+    width: 64px;
+    margin: 0 0 20px;
+    padding: 8px 0 7px;
+    border-radius: var(--tv-r-14);
+    font-size: 9px;
+    letter-spacing: .06em;
+    text-align: center;
+  }
+  .chipDot,
+  .chipSep { display: none; }
+}
+@media (max-width: 767px) {
+  .wrap { padding-bottom: 16px; }
+  .section { border-radius: var(--tv-r-28); }
+  .head { margin-bottom: 48px; gap: 20px; }
+  .lead { grid-column: 1 / -1; font-size: 16px; }
+  .list { gap: 16px; }
+  .step {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 20px 16px;
+    padding: 16px 0;
+    align-items: start;
+  }
+  .nodeCol { grid-row: 1 / span 2; align-self: start; }
+  .text { gap: 12px; padding-top: 6px; }
+  .even .media,
+  .odd .media { grid-column: 2; grid-row: 2; }
+  .copy { font-size: 16px; }
+  .label { font-size: 11px; letter-spacing: .12em; }
+  .p0 { stroke-width: 7px; }
+  .p1,
+  .p2 { stroke-width: 2.5px; }
+  .s0 { stroke-width: 8px; }
+  .s1 { stroke-width: 3.5px; }
+  .track { stroke-width: 22px; }
+  .glow { stroke-width: 16px; }
+  .maskPath { stroke-width: 30px; }
+  .u0 { stroke-width: 2px; }
+  .u1,
+  .u2 { stroke-width: 1.4px; }
+  .unit { width: 14px; height: 14px; margin: -7px 0 0 -7px; }
+  .halo { width: 36px; height: 36px; margin: -18px 0 0 -18px; }
+  .chip { top: 84px; }
+}
+@media (max-width: 419px) {
+  .section { border-radius: var(--tv-r-24); }
+}
+
+/* Reduced motion: static, fully drawn braid; no head, no pulses, no bursts. */
+@media (prefers-reduced-motion: reduce) {
+  .unit,
+  .pulses,
+  .surge { display: none; }
+  .node::before,
+  .node::after { animation: none; }
+}
+/* Reduced motion on desktop: the readout sits still above the timeline, not sticky over it. */
+@media (prefers-reduced-motion: reduce) and (min-width: 1100px) {
+  .chip { position: relative; top: auto; }
+}

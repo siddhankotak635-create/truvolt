@@ -1,0 +1,90 @@
+/* Truvolt Home.dc.html RANGE: horizontal scrub (#range) */
+.section { padding-inline: var(--tv-inset); } /* insets the panel; this box is the pin */
+.panel {
+  overflow: hidden;
+  border-radius: 0 0 var(--tv-r-40) var(--tv-r-40); /* continues the Flagship block */
+}
+.head {
+  max-width: var(--tv-container);
+  margin: 0 auto;
+  padding: 40px var(--tv-gutter) 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.title {
+  margin: 0;
+  font-size: var(--tv-h2);
+  font-weight: 600;
+  letter-spacing: -.04em;
+  line-height: 1;
+  max-width: 14ch;
+  text-wrap: balance;
+}
+.count {
+  margin: 0;
+  font-family: var(--tv-mono);
+  font-size: 12px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--tv-on-dark-muted);
+}
+.track {
+  display: flex;
+  gap: 20px;
+  padding: 56px var(--tv-gutter) 64px;
+  width: max-content;
+}
+@media (min-width: 1100px) {
+  /* The whole pinned panel (head + track) must fit in 100svh so no card is cropped:
+   * --range-chrome is the panel height minus the card height. HomeMotion measures it
+   * (head height + track padding) and sets it inline; 300px is the pre-JS fallback.
+   * Cards grow on wide, tall screens and shrink on short ones. */
+  .panel { --range-chrome: 300px; }
+  .title { max-width: 22ch; }
+  .track .card { width: min(clamp(520px, 30vw, 760px), 78vw, calc((100svh - var(--range-chrome)) * .8)); }
+}
+
+/* Reduced motion or no JS (no html.tv-motion): no pin, so the track becomes a native
+ * horizontal scroll-snap rail at every width. Cards keep their desktop size here. */
+:global(html:not(.tv-motion)) .track {
+  width: auto;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--tv-gutter);
+}
+:global(html:not(.tv-motion)) .track .card { scroll-snap-align: start; }
+@media (min-width: 1100px) {
+  /* The panel is already inset; keep a visible scrollbar for mouse users. */
+  :global(html:not(.tv-motion)) .track {
+    padding-inline: var(--tv-gutter);
+    scroll-padding-inline: var(--tv-gutter);
+  }
+}
+
+/* Below desktop: native scroll-snap rail */
+@media (max-width: 1099px) {
+  .track {
+    width: auto;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--tv-gutter);
+    padding: 40px var(--tv-gutter) calc(var(--tv-section) * .75);
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .track::-webkit-scrollbar { display: none; }
+  .track .card {
+    scroll-snap-align: start;
+    width: min(440px, 70vw, calc((100svh - 140px) * .8)); /* snapped card fits the viewport */
+  }
+}
+@media (max-width: 767px) {
+  .panel { border-radius: 0 0 var(--tv-r-28) var(--tv-r-28); }
+  .track { gap: 14px; padding-top: 32px; }
+  .track .card { width: min(360px, 82vw, calc((100svh - 140px) * .8)); }
+}

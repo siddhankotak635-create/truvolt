@@ -1,0 +1,62 @@
+/* Truvolt Home.dc.html STATS */
+.section {
+  max-width: var(--tv-container);
+  margin: 0 auto;
+  padding: 0 var(--tv-gutter) var(--tv-section);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  border-top: 1px solid var(--tv-line-18);
+}
+.cell {
+  padding: 32px 24px 0;
+  border-right: 1px solid var(--tv-line-12);
+}
+.cell:first-child { padding-left: 0; }
+.cell:last-child { padding-right: 0; border-right: 0; }
+.value {
+  margin: 0;
+  font-size: clamp(48px, 5.5vw, 80px);
+  font-weight: 600;
+  letter-spacing: -.05em;
+  line-height: 1;
+}
+.unit {
+  font-size: .4em;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.label {
+  margin: 14px 0 0;
+  font-family: var(--tv-mono);
+  font-size: 12px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--tv-text-muted);
+}
+
+/* Below desktop: 3 / 2 columns, rows separated by hairlines instead of a single row. */
+@media (max-width: 1099px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-top: 0;
+    column-gap: 24px;
+  }
+  .cell,
+  .cell:first-child,
+  .cell:last-child {
+    padding: 28px 0 32px;
+    border-right: 0;
+    border-top: 1px solid var(--tv-line-18);
+  }
+}
+@media (max-width: 767px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; }
+  .cell,
+  .cell:first-child,
+  .cell:last-child { padding: 22px 0 26px; }
+  .cell:last-child { grid-column: 1 / -1; }
+  .value { font-size: clamp(40px, 12vw, 56px); }
+  .label { font-size: 11px; margin-top: 10px; }
+}

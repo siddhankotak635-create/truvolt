@@ -1,0 +1,104 @@
+.footer {
+  background: var(--tv-ink);
+  color: var(--tv-bg);
+  border-radius: var(--tv-r-40) var(--tv-r-40) 0 0;
+  padding: 96px var(--tv-gutter) 32px;
+}
+.inner {
+  max-width: var(--tv-container);
+  margin: 0 auto;
+}
+.top {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--tv-gap);
+  align-items: end;
+  margin: 0 0 72px;
+}
+.statement { grid-column: 1 / 8; }
+.doodle { grid-column: 8 / 13; }
+.logo {
+  height: 36px;
+  width: auto;
+  display: block;
+  margin: 0 0 40px;
+}
+.heading {
+  margin: 0;
+  font-size: clamp(40px, 7vw, 112px);
+  font-weight: 600;
+  letter-spacing: -.05em;
+  line-height: .92;
+  max-width: 12ch;
+  text-wrap: balance;
+}
+.cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 32px;
+  padding-top: 40px;
+  border-top: 1px solid var(--tv-dline-16);
+  font-size: 15px;
+}
+.col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+.label {
+  font-family: var(--tv-mono);
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--tv-on-dark-muted);
+}
+.link { transition: color .25s; }
+.link:hover { color: var(--tv-accent-light); }
+.address {
+  margin: 0;
+  line-height: 1.55;
+  color: var(--tv-on-dark-soft);
+}
+.gst {
+  margin: 0;
+  font-family: var(--tv-mono);
+  font-size: 12px;
+  color: var(--tv-on-dark-muted);
+}
+.bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 64px;
+  font-family: var(--tv-mono);
+  font-size: 12px;
+  color: var(--tv-on-dark-muted);
+}
+.legal { display: flex; gap: 24px; }
+.legalLink:hover { color: var(--tv-accent-light); }
+
+@media (max-width: 1099px) {
+  .top { row-gap: 48px; }
+  .statement, .doodle { grid-column: 1 / -1; }
+}
+@media (max-width: 767px) {
+  .footer { padding-top: 72px; }
+  .top { margin-bottom: 48px; row-gap: 32px; }
+  .cols {
+    grid-template-columns: 1fr 1fr;
+    gap: 28px 16px;
+    padding-top: 32px;
+  }
+  .wide { grid-column: 1 / -1; }
+  .col { gap: 0; }
+  .label { margin-bottom: 6px; }
+  /* tap-friendly rows */
+  .link, .legalLink {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .bottom { margin-top: 40px; flex-direction: column; }
+}

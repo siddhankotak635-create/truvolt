@@ -1,0 +1,9 @@
+node_modules/
+.next/
+out/
+dist/
+.astro/
+.superpowers/
+next-env.d.ts
+*.tsbuildinfo
+.DS_Store

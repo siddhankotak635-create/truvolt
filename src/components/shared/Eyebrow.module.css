@@ -1,0 +1,11 @@
+.eyebrow {
+  margin: 0;
+  font-family: var(--tv-mono);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: .14em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: var(--tv-text-muted);
+}
+.dark { color: var(--tv-on-dark-muted); }

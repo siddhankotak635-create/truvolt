@@ -1,0 +1,226 @@
+/* Truvolt Home.dc.html HERO (pinned, media expands to full bleed) */
+.hero {
+  position: relative;
+  height: 100svh;
+  overflow: hidden;
+}
+
+/* ---- copy layer ---- */
+.copy {
+  position: absolute;
+  inset: 0 0 26vh;
+  z-index: 2;
+  display: grid;
+  align-content: end;
+  padding: 96px var(--tv-gutter) 18px;
+  max-width: var(--tv-container);
+  margin: 0 auto;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 24px 32px;
+  align-items: flex-end;
+}
+.head { grid-column: 1 / span 12; }
+.hero .eyebrow { margin: 0 0 18px; }
+.title {
+  margin: 0;
+  font-size: clamp(30px, min(7vw, 7.6svh), 104px);
+  font-weight: 600;
+  letter-spacing: -.045em;
+  line-height: .92;
+  text-wrap: balance;
+  max-width: 14ch;
+}
+.intro {
+  grid-column: 1 / span 7;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.6svh, 18px);
+  padding-top: clamp(12px, 2svh, 22px);
+  border-top: 1px solid var(--tv-line-18);
+}
+.lead {
+  margin: 0;
+  font-size: clamp(15px, 1.3vw, 18px);
+  line-height: 1.5;
+  color: var(--tv-text);
+  max-width: 50ch;
+}
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.stats {
+  grid-column: 9 / span 4;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding-top: clamp(12px, 2svh, 22px);
+  border-top: 1px solid var(--tv-line-18);
+  align-self: start;
+}
+.statValue {
+  margin: 0 0 6px;
+  font-size: clamp(26px, 2.6vw, 36px);
+  font-weight: 600;
+  letter-spacing: -.04em;
+  line-height: 1;
+}
+.statValue span {
+  font-size: .5em;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.statLabel {
+  margin: 0;
+  font-family: var(--tv-mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--tv-text-muted);
+}
+
+/* ---- media card (expands to full bleed while pinned) ----
+ * Centred with auto margins rather than translateX(-50%) so GSAP's y (intro)
+ * and width (scrub) tweens never fight over the transform. */
+.media {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -5vh;
+  margin: 0 auto;
+  width: var(--tv-content-w);
+  height: 26vh;
+  border-radius: var(--tv-r-28);
+  overflow: hidden;
+  background: var(--tv-placeholder);
+  z-index: 1;
+}
+/* Pre-hidden like the other intro targets until HomeMotion sets its "from" state. */
+:global(html.tv-motion) .media {
+  visibility: hidden;
+  animation: heroUnhide 0s linear 2.5s forwards;
+}
+@keyframes heroUnhide { to { visibility: visible; } }
+.img {
+  object-fit: cover;
+  filter: saturate(.85) contrast(1.05);
+  animation: heroKenburns 18s ease-in-out infinite alternate;
+}
+/* local copy of global tv-kenburns (module keyframe names are scoped) */
+@keyframes heroKenburns { from { transform: scale(1.08) translateY(-2%); } to { transform: scale(1.18) translateY(2%); } }
+.shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(22, 24, 25, .1) 0%, rgba(22, 24, 25, 0) 35%, rgba(22, 24, 25, .75) 100%);
+}
+.caption {
+  position: absolute;
+  left: 28px;
+  right: 28px;
+  bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  color: var(--tv-bg);
+  font-family: var(--tv-mono);
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  opacity: 0;
+}
+
+/* ---- dark statement ---- */
+.statement {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(60% 60% at 50% 50%, rgba(22, 24, 25, .72), rgba(22, 24, 25, .35) 70%, rgba(22, 24, 25, .15));
+}
+.statement p {
+  margin: 0;
+  color: var(--tv-bg);
+  font-size: clamp(28px, 4vw, 56px);
+  font-weight: 600;
+  letter-spacing: -.04em;
+  line-height: 1.08;
+  text-align: center;
+  max-width: 22ch;
+  text-wrap: balance;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, .5);
+}
+
+/* fitHero: hide the stats on short viewports (innerHeight < 620) */
+@media (max-height: 619px) and (prefers-reduced-motion: no-preference) {
+  .stats { display: none; }
+}
+
+/* ---- tablet ---- */
+@media (min-width: 768px) and (max-width: 1099px) {
+  .intro { grid-column: 1 / span 7; }
+  .stats { grid-column: 8 / span 5; }
+}
+
+/* ---- mobile ---- */
+@media (max-width: 767px) {
+  .copy { padding-top: 88px; padding-bottom: 16px; }
+  .grid { gap: 16px; }
+  .hero .eyebrow { margin-bottom: 14px; font-size: 11px; letter-spacing: .12em; }
+  .title { font-size: clamp(30px, min(8.6vw, 6svh), 104px); max-width: none; }
+  .intro, .stats { grid-column: 1 / -1; }
+  .lead { font-size: 15px; }
+  .stats { gap: 8px; }
+  .statValue { font-size: clamp(22px, 6.6vw, 30px); }
+  .statLabel { font-size: 10px; letter-spacing: .08em; }
+  .caption {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 10px;
+  }
+  .statement { padding: 16px; }
+}
+
+/* ---- reduced motion: no pin; show the scene's end state as normal flow ---- */
+@media (prefers-reduced-motion: reduce) {
+  .hero {
+    height: auto;
+    min-height: 100svh;
+    overflow: visible;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    padding-bottom: 24px;
+  }
+  .copy {
+    position: relative;
+    inset: auto;
+    grid-row: 1;
+    grid-column: 1;
+    width: 100%;
+    padding-bottom: 32px;
+  }
+  .media,
+  .statement {
+    position: relative;
+    inset: auto;
+    grid-row: 2;
+    grid-column: 1;
+    width: var(--tv-content-w);
+    height: 70svh;
+    min-height: 360px;
+    margin: 0 auto;
+    border-radius: var(--tv-r-28);
+  }
+  .statement { opacity: 1; }
+  .caption { opacity: 1; }
+}

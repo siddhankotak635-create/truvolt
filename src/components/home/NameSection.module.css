@@ -1,0 +1,111 @@
+/* Truvolt Home.dc.html NAME / DEFINITION (#name) */
+.section {
+  max-width: var(--tv-container);
+  margin: 0 auto;
+  padding: var(--tv-section) var(--tv-gutter) calc(var(--tv-section) * .75);
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 24px;
+}
+.copy { grid-column: 1 / span 5; }
+.title {
+  margin: 0 0 28px;
+  font-size: var(--tv-h2);
+  font-weight: 600;
+  letter-spacing: -.04em;
+  line-height: 1;
+  text-wrap: balance;
+}
+.words {
+  margin: 0 0 20px;
+  font-size: clamp(20px, 1.7vw, 24px);
+  line-height: 1.4;
+  font-weight: 500;
+  letter-spacing: -.01em;
+  max-width: 34ch;
+}
+.body {
+  margin: 0 0 32px;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--tv-text);
+  max-width: 44ch;
+}
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  font-size: 15px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--tv-ink);
+  transition: color .3s, border-color .3s;
+}
+.link:hover {
+  color: var(--tv-accent);
+  border-color: var(--tv-accent);
+}
+.side {
+  grid-column: 7 / span 6;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.media {
+  position: relative;
+  border-radius: var(--tv-r-24);
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  background: var(--tv-placeholder);
+}
+.img {
+  position: absolute;
+  inset: -8% 0;
+  width: 100%;
+  max-width: none;
+  height: 116%;
+  object-fit: cover;
+}
+.card {
+  border-radius: var(--tv-r-24);
+  padding: 32px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.word {
+  margin: 0 0 6px;
+  font-size: 34px;
+  font-weight: 600;
+  letter-spacing: -.03em;
+}
+.pron {
+  margin: 0;
+  font-family: var(--tv-mono);
+  font-size: 14px;
+  color: var(--tv-on-dark-muted);
+}
+.def {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--tv-on-dark-soft);
+}
+.def em {
+  font-style: italic;
+  color: var(--tv-bg);
+}
+
+@media (max-width: 1099px) {
+  .copy, .side { grid-column: 1 / -1; }
+  .side { margin-top: 32px; }
+  .words { max-width: 40ch; }
+}
+@media (max-width: 767px) {
+  .title { margin-bottom: 20px; }
+  .words { font-size: 19px; }
+  .body { font-size: 16px; }
+  .side { margin-top: 24px; }
+  .card { grid-template-columns: 1fr; gap: 14px; padding: 28px 24px; }
+  .word { font-size: 30px; }
+}

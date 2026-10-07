@@ -1,0 +1,140 @@
+/* Truvolt Home.dc.html FOOTPRINT MAP (#footprint) */
+.section {
+  border-radius: var(--tv-r-40);
+  margin: 0 var(--tv-inset) var(--tv-section); /* panel edges on the content edges */
+}
+.inner {
+  max-width: var(--tv-container);
+  margin: 0 auto;
+  padding: calc(var(--tv-section) * .75) var(--tv-gutter);
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 24px;
+  align-items: center;
+}
+.side { grid-column: 1 / span 4; }
+.section .eyebrow { margin: 0 0 20px; }
+.title {
+  margin: 0 0 24px;
+  font-size: var(--tv-h2);
+  font-weight: 600;
+  letter-spacing: -.04em;
+  line-height: 1;
+  text-wrap: balance;
+}
+.lead {
+  margin: 0 0 32px;
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--tv-on-dark-soft);
+  max-width: 38ch;
+}
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+  font-size: 15px;
+}
+.country {
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  transition: background .3s;
+}
+.country:hover { background: rgba(220, 231, 243, .08); }
+.item[data-hot] .country { background: rgba(220, 231, 243, .12); }
+.countryName { font-weight: 600; }
+.region {
+  font-family: var(--tv-mono);
+  font-size: 11px;
+  color: var(--tv-on-dark-muted);
+}
+.map {
+  grid-column: 5 / span 8;
+  position: relative;
+  border-radius: var(--tv-r-24);
+  overflow: hidden;
+  background: radial-gradient(80% 80% at 50% 50%, var(--tv-dark-3), var(--tv-ink));
+  aspect-ratio: 16 / 11;
+  border: 1px solid var(--tv-dline-10);
+}
+.frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+}
+.tip {
+  position: absolute;
+  left: 20px;
+  bottom: 16px;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--tv-r-pill);
+  background: rgba(220, 231, 243, .9);
+  color: var(--tv-ink);
+  font-family: var(--tv-mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  transition: opacity .3s;
+  pointer-events: none;
+}
+.note {
+  position: absolute;
+  right: 20px;
+  bottom: 16px;
+  margin: 0;
+  font-family: var(--tv-mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--tv-on-dark-muted);
+  pointer-events: none;
+}
+
+@media (pointer: coarse) {
+  .country { min-height: 44px; align-items: center; }
+}
+
+/* Below desktop: intro, then the map, then the list (2 columns). */
+@media (max-width: 1099px) {
+  .inner {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+  .side { display: contents; }
+  .intro { order: 1; }
+  .map { order: 2; margin: 8px 0 28px; }
+  .list { order: 3; }
+  .lead { margin-bottom: 32px; }
+}
+@media (max-width: 767px) {
+  .section { border-radius: var(--tv-r-28); }
+  .lead { font-size: 16px; margin-bottom: 24px; }
+  .map { border-radius: var(--tv-r-20); margin-bottom: 20px; }
+  .list { gap: 2px 8px; }
+  .country { padding: 10px; gap: 8px; }
+  .tip { left: 12px; top: 12px; bottom: auto; }
+  .note { left: 12px; right: 12px; bottom: 10px; font-size: 9px; letter-spacing: .06em; text-align: right; }
+}
+@media (max-width: 419px) {
+  .section { border-radius: var(--tv-r-24); }
+  .region { font-size: 10px; }
+}

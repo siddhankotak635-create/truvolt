@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Truvolt export map</title>
+<script src="https://unpkg.com/d3@7.9.0/dist/d3.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js" integrity="sha384-Ukv1p/xTma6P4/2bY5KzWBw+ydSpXmhCMtyciIQVDJ1RmOxtCYNMF1uXT9T63H67" crossorigin="anonymous"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;height:100%;background:transparent;overflow:hidden;font-family:'JetBrains Mono',monospace}
+svg{display:block;width:100%;height:100%}
+.land{fill:#22272c;stroke:#161819;stroke-width:.5}
+.served{fill:#34425a;stroke:#9fb2c7;stroke-width:.7;transition:fill .35s}
+.served.hot{fill:#4f7fe6}
+.ring{fill:none;stroke:#DCE7F3;stroke-opacity:.16;stroke-width:1;stroke-dasharray:2 5}
+.ringlbl{font-size:10px;letter-spacing:.1em;fill:#9fb2c7;fill-opacity:.8}
+.spoke{fill:none;stroke:#DCE7F3;stroke-opacity:.35;stroke-width:.9}
+.spoke.hot{stroke-opacity:1;stroke-width:1.4}
+.node{fill:#DCE7F3;transition:r .3s}
+.node.hot{fill:#fff}
+.sweep{transform-box:view-box;animation:sweep 9s linear infinite}
+@keyframes sweep{to{transform:rotate(360deg)}}
+.tag{font-size:11px;letter-spacing:.1em;text-transform:uppercase;fill:#DCE7F3;pointer-events:none}
+.tagbg{fill:rgba(22,24,25,.85)}
+.km{fill:#9fb2c7}
+</style></head><body>
+<svg id="m"></svg>
+<script>
+const SERVED = {356:'India',524:'Nepal',50:'Bangladesh',64:'Bhutan',894:'Zambia',404:'Kenya',566:'Nigeria',231:'Ethiopia',368:'Iraq'};
+const K = [88.3639, 22.5726];
+const CAP = {524:[85.32,27.71],50:[90.41,23.81],64:[89.64,27.47],894:[28.32,-15.39],404:[36.82,-1.29],566:[7.49,9.06],231:[38.75,9.02],368:[44.37,33.31]};
+const svg = d3.select('#m');
+let built = false, VW = 0, VH = 0;
+// Touch support: a tap on a served country posts 'hover', a tap on empty space posts 'leave'.
+let touchActive = false, tapped = null, hotFn = null;
+window.addEventListener('pointerdown', e => { touchActive = e.pointerType !== 'mouse'; }, true);
+svg.on('click.empty', () => { if (!touchActive || tapped === null) return; if (hotFn) hotFn(tapped,false); tapped = null; parent.postMessage({tvMap:'leave'},'*'); });
+window.addEventListener('message', e=>{ const m=e.data||{}; if(!hotFn) return; if(m.tvMap==='hot') hotFn(m.id,true); if(m.tvMap==='cool') hotFn(m.id,false); });
+function build(topo){
+  const r = document.body.getBoundingClientRect(); if (!r.width || !r.height) return false;
+  const W = r.width, H = r.height; VW = W; VH = H; svg.attr('viewBox',`0 0 ${W} ${H}`); svg.selectAll('*').remove();
+  const countries = topojson.feature(topo, topo.objects.countries).features;
+  const served = countries.filter(f => SERVED[+f.id]);
+  const proj = d3.geoAzimuthalEquidistant().rotate([-K[0], -K[1]]).clipAngle(96);
+  proj.fitExtent([[W*0.05, H*0.06],[W*0.95, H*0.94]], {type:'FeatureCollection', features: served});
+  const path = d3.geoPath(proj);
+  const k = proj(K);
+  const g = svg.append('g');
+  g.selectAll('path.land').data(countries).join('path').attr('class','land').attr('d',path);
+  // distance rings every 2,000 km (1° ≈ 111.2 km)
+  const rings = [2000,4000,6000,8000,10000];
+  rings.forEach(km => { const c = d3.geoCircle().center(K).radius(km/111.2)(); g.append('path').attr('class','ring').attr('d',path(c)); const top = proj([K[0], K[1] + km/111.2]); if (top) { const lb = g.append('text').attr('class','ringlbl').attr('x', k[0]+6).attr('y', top[1]-5).text(km.toLocaleString()+' km'); if (k[0] + 6 + lb.node().getComputedTextLength() > W - 4) lb.attr('x', k[0]-6).attr('text-anchor','end'); } });
+  // radar sweep (wedge + line) rotating about Kolkata
+  const defs = svg.append('defs');
+  const grad = defs.append('linearGradient').attr('id','wg').attr('x1','0').attr('x2','1'); grad.append('stop').attr('offset','0').attr('stop-color','#4f7fe6').attr('stop-opacity','0'); grad.append('stop').attr('offset','1').attr('stop-color','#4f7fe6').attr('stop-opacity','.22');
+  const sw = g.append('g').attr('class','sweep').style('transform-origin', `${k[0]}px ${k[1]}px`);
+  const RR = Math.hypot(W,H);
+  sw.append('path').attr('fill','url(#wg)').attr('d', `M${k[0]},${k[1]} L${k[0]+RR},${k[1]} A${RR},${RR} 0 0 0 ${k[0]+RR*Math.cos(-0.6)},${k[1]+RR*Math.sin(-0.6)} Z`);
+  sw.append('line').attr('x1',k[0]).attr('y1',k[1]).attr('x2',k[0]+RR).attr('y2',k[1]).attr('stroke','#DCE7F3').attr('stroke-opacity','.5').attr('stroke-width','1');
+  g.selectAll('path.served').data(served).join('path').attr('class','served').attr('data-id',d=>+d.id).attr('d',path)
+    .on('mouseenter',(e,d)=>{hot(+d.id,true); parent.postMessage({tvMap:'hover',id:+d.id,name:SERVED[+d.id]},'*');})
+    .on('mouseleave',(e,d)=>{ if (touchActive) return; hot(+d.id,false); parent.postMessage({tvMap:'leave'},'*');})
+    .on('click',(e,d)=>{ if (!touchActive) return; e.stopPropagation(); if (tapped !== null && tapped !== +d.id) hot(tapped,false); tapped = +d.id; hot(tapped,true); parent.postMessage({tvMap:'hover',id:tapped,name:SERVED[tapped]},'*'); });
+  // straight spokes (great circles are straight lines from the centre in this projection)
+  Object.entries(CAP).forEach(([id,c],i)=>{ const p = proj(c); const L = Math.hypot(p[0]-k[0],p[1]-k[1]); g.append('line').attr('class','spoke').attr('data-id',id).attr('x1',k[0]).attr('y1',k[1]).attr('x2',p[0]).attr('y2',p[1]).attr('stroke-dasharray',L).attr('stroke-dashoffset',L).transition().delay(300+i*110).duration(1200).ease(d3.easeCubicOut).attr('stroke-dashoffset',0); });
+  Object.entries(CAP).forEach(([id,c],i)=>{ const p = proj(c); g.append('circle').attr('class','node').attr('data-id',id).attr('cx',p[0]).attr('cy',p[1]).attr('r',0).transition().delay(1400+i*110).duration(400).attr('r',3); });
+  // hub
+  g.append('circle').attr('cx',k[0]).attr('cy',k[1]).attr('r',14).attr('fill','none').attr('stroke','#DCE7F3').attr('stroke-opacity','.5');
+  g.append('circle').attr('cx',k[0]).attr('cy',k[1]).attr('r',4.5).attr('fill','#DCE7F3');
+  const hubTag = tagAt(g, k[0], k[1], 22, 'Kolkata works', '0 km');
+  // hover tag layer
+  const tagLayer = svg.append('g').attr('id','tag');
+  hotFn = hot;
+  function hot(id,on){ svg.selectAll(`[data-id="${id}"]`).classed('hot',on).filter('circle').attr('r',on?5:3); tagLayer.selectAll('*').remove(); if(on){ const c = CAP[id]; if(!c) return; const p = proj(c); const km = Math.round(d3.geoDistance(K,c)*6371/50)*50; const t = tagAt(tagLayer, p[0], p[1], 14, SERVED[id], km.toLocaleString()+' km'); const a = t.node().getBBox(), b = hubTag.node().getBBox(); if (a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height) { const dy = a.y + a.height / 2 < b.y + b.height / 2 && b.y - a.height - 4 >= 0 ? b.y - a.height - 4 - a.y : b.y + b.height + 4 - a.y; t.attr('transform', `translate(0,${dy})`); } } }
+  built = true; return true;
+}
+// Tag to the right of the point (px,py) at offset `off`; flips to the left when it would clip the frame's right edge.
+function tagAt(g, px, py, off, name, km){ const t = g.append('g'); const txt = t.append('text').attr('class','tag').text(name.toUpperCase()); const kt = t.append('text').attr('class','tag km').text(km); const w = Math.max(txt.node().getComputedTextLength(), kt.node().getComputedTextLength()) + 16; let x = px + off; if (x + w > VW - 4) x = Math.max(4, px - off - w); const y = Math.min(Math.max(py, 12), VH - 28); txt.attr('x',x+8).attr('y',y+4); kt.attr('x',x+8).attr('y',y+18); t.insert('rect','text').attr('class','tagbg').attr('x',x).attr('y',y-8).attr('width',w).attr('height',32).attr('rx',6); return t; }
+fetch('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json').then(r=>r.json()).then(topo=>{
+  const tryBuild = () => { if (!build(topo)) requestAnimationFrame(tryBuild); };
+  tryBuild();
+  if (window.ResizeObserver) { let t; new ResizeObserver(()=>{ clearTimeout(t); t=setTimeout(()=>build(topo),150); }).observe(document.body); }
+});
+</script></body></html>
