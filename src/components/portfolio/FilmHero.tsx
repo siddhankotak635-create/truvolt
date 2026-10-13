@@ -1,11 +1,16 @@
 import { Eyebrow } from '@/components/shared/Eyebrow';
 import { Button } from '@/components/shared/Button';
-import { media } from '@/data/assets';
+import { getImageProps } from 'next/image';
+import { preload } from 'react-dom';
+import { filmPoster, media } from '@/data/assets';
 import { FILM_BEATS } from './filmBeats';
 import { FilmPlay } from './FilmPlay';
 import styles from './FilmHero.module.css';
 
 const pad = (n: number) => String(n).padStart(2, '0');
+
+/** Poster through the image optimiser (AVIF/WebP, ~1280w) instead of the 236 KB JPEG. */
+const posterSrc = () => getImageProps({ ...filmPoster, alt: '' }).props.src;
 
 /**
  * FILM CHAPTER. With motion: the card expands to full screen on first arrival and the clip plays once
@@ -16,6 +21,9 @@ const pad = (n: number) => String(n).padStart(2, '0');
  * and the captions as a static list.
  */
 export function FilmHero() {
+  const poster = posterSrc();
+  // The poster is the Portfolio LCP: fetch it with the document, not when the <video> is parsed.
+  preload(poster, { as: 'image', fetchPriority: 'high' });
   return (
     <section id="top" data-tv-film="" className={styles.film} aria-labelledby="portfolio-title">
       <div data-tv-film-copy="" className={styles.copy}>
@@ -31,14 +39,14 @@ export function FilmHero() {
         <video
           data-tv-video=""
           className={styles.video}
-          poster={media.heroPoster}
+          poster={poster}
           muted
           playsInline
           preload="metadata"
           controls
           aria-label="Electricians working at a substation (stock footage, no audio)"
         >
-          {/* 720p below the desktop breakpoint; PortfolioMotion raises preload only on the motion path. */}
+          {/* 540p below the desktop breakpoint, 720p above; PortfolioMotion raises preload only on the motion path. */}
           <source src={media.heroVideoSd} type="video/mp4" media="(max-width: 1099px)" />
           <source src={media.heroVideo} type="video/mp4" />
         </video>

@@ -1,5 +1,6 @@
 import Image from 'next/image';
-import { Button, Eyebrow } from '@/components/shared';
+import { Button } from '@/components/shared/Button';
+import { Eyebrow } from '@/components/shared/Eyebrow';
 import { images } from '@/data/assets';
 import styles from './Hero.module.css';
 

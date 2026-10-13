@@ -73,7 +73,8 @@ export function QualityMotion({ children }: { children: ReactNode }) {
             });
           },
         });
-        gsap.fromTo(bar, { width: '0%' }, { width: '100%', duration: 1.6, ease: 'power1.inOut', overwrite: true });
+        // Full-width bar slid in from the left inside its clipped track (no layout per frame).
+        gsap.fromTo(bar, { xPercent: -100 }, { xPercent: 0, duration: 1.6, ease: 'power1.inOut', overwrite: true });
       };
 
       // Pinned scene (desktop + tablet): each test owns ~70vh of scroll so none is skipped.
@@ -87,7 +88,7 @@ export function QualityMotion({ children }: { children: ReactNode }) {
             start: 'top top',
             end: () => '+=' + tests.length * 70 + '%',
             pin: true,
-            scrub: 0.8,
+            scrub: 0.25,
             anticipatePin: 1,
             invalidateOnRefresh: true,
             onUpdate: (self) => setActive(Math.min(tests.length - 1, Math.floor(self.progress * tests.length))),
@@ -123,7 +124,7 @@ export function QualityMotion({ children }: { children: ReactNode }) {
       cleanups.push(() => {
         gsap.killTweensOf(reading);
         gsap.killTweensOf(bar);
-        bar.style.width = '';
+        gsap.set(bar, { clearProps: 'transform' });
         tests.forEach((el) => {
           el.style.opacity = '';
           el.style.borderColor = '';
@@ -147,7 +148,7 @@ export function QualityMotion({ children }: { children: ReactNode }) {
         gsap.fromTo(
           rows,
           { opacity: 0, x: -12 },
-          { opacity: 1, x: 0, duration: 0.6, stagger: 0.08, ease: 'power2.out', scrollTrigger: { trigger: rows[0], start: 'top 85%' } },
+          { opacity: 1, x: 0, duration: 0.6, stagger: 0.08, ease: 'power2.out', scrollTrigger: { trigger: rows[0], start: 'top 85%', once: true } },
         );
     }
 

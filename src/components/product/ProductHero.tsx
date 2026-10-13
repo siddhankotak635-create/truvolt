@@ -1,10 +1,14 @@
 'use client';
 
 import Image from 'next/image';
-import { Button, Eyebrow } from '@/components/shared';
+import { Button } from '@/components/shared/Button';
+import { Eyebrow } from '@/components/shared/Eyebrow';
 import type { Product } from '@/data/products';
 import { useMotion } from '@/lib/motion';
 import styles from './ProductHero.module.css';
+
+/** next/image sizes of the hero photo; ProductsExplorer warms the other products with the same value. */
+export const HERO_SIZES = '(min-width: 1100px) 50vw, 100vw';
 
 /**
  * Product hero (mockup #top). `data-tv-swap` marks the intro targets
@@ -57,12 +61,15 @@ export function ProductHero({ p }: { p: Product }) {
       <div data-tv-tilt="" className={styles.tilt}>
         <div data-tv-reveal="" data-tv-hero-media="" className={styles.media}>
           <div data-tv-hero-pan="" className={styles.pan}>
+            {/* No `priority` / fetchPriority="high" (React turns either into a <link rel=preload>): that
+                would preload the server default (distribution) even for a /products#power deep link.
+                Eager still fetches the shown product straight from the HTML. */}
             <Image
               src={p.image}
               alt={p.title}
               fill
-              priority
-              sizes="(min-width: 1100px) 50vw, 100vw"
+              loading="eager"
+              sizes={HERO_SIZES}
               className={styles.img}
             />
           </div>

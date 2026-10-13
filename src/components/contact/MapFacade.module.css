@@ -1,0 +1,95 @@
+/* Static stand-in for the Google Maps embed (click to load). Fills its positioned parent. */
+.facade {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tv-placeholder);
+  color: var(--tv-ink);
+  overflow: hidden;
+}
+.padBottom { padding-bottom: 56px; }
+.grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(22, 24, 25, .07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(22, 24, 25, .07) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+/* Two pale "streets" crossing near the pin, so the card reads as a map. */
+.roads {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(8deg, transparent calc(50% - 7px), rgba(220, 231, 243, .85) calc(50% - 7px), rgba(220, 231, 243, .85) calc(50% + 7px), transparent calc(50% + 7px)),
+    linear-gradient(98deg, transparent calc(46% - 5px), rgba(220, 231, 243, .7) calc(46% - 5px), rgba(220, 231, 243, .7) calc(46% + 5px), transparent calc(46% + 5px));
+}
+.pin {
+  width: 14px;
+  height: 14px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: var(--tv-accent);
+  box-shadow: 0 0 0 6px rgba(22, 24, 25, .08), 0 0 0 14px rgba(22, 24, 25, .05);
+}
+.body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: var(--tv-r-20);
+  background: rgba(220, 231, 243, .92);
+  border: 1px solid rgba(22, 24, 25, .1);
+  text-align: center;
+  max-width: calc(100% - 32px);
+}
+.address {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--tv-mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  line-height: 1.6;
+  text-transform: uppercase;
+}
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.load,
+.link {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 16px;
+  border-radius: var(--tv-r-pill);
+  font-family: var(--tv-mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .25s, color .25s;
+}
+.load {
+  border: 0;
+  background: var(--tv-ink);
+  color: var(--tv-bg);
+}
+.load:hover { background: var(--tv-accent); }
+.link {
+  border: 1px solid rgba(22, 24, 25, .2);
+  color: var(--tv-ink);
+}
+.link:hover { background: var(--tv-accent-light); }
+.load:focus-visible,
+.link:focus-visible { outline: 2px solid var(--tv-accent); outline-offset: 2px; }
+
+@media (pointer: coarse) {
+  .load, .link { min-height: 44px; }
+}

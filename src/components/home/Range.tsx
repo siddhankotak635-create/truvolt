@@ -1,4 +1,4 @@
-import { ProductCard } from '@/components/shared';
+import { ProductCard } from '@/components/shared/ProductCard';
 import { CARDS } from '@/data/products';
 import styles from './Range.module.css';
 

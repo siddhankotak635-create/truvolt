@@ -35,7 +35,13 @@ export function AboutMotion({ children }: { children: ReactNode }) {
         const legacyScene = (end: string) => () => {
           const finalYear = yearEl.textContent;
           const o = { y: 1970 };
-          const light = (idx: number) => lines.forEach((l, i) => (l.style.opacity = i === idx ? '1' : '0.6'));
+          // Written only when the highlighted line changes, not on every scrub frame.
+          let lit = -1;
+          const light = (idx: number) => {
+            if (idx === lit) return;
+            lit = idx;
+            lines.forEach((l, i) => (l.style.opacity = i === idx ? '1' : '0.6'));
+          };
           yearEl.textContent = '1970';
           light(0);
 
@@ -46,7 +52,7 @@ export function AboutMotion({ children }: { children: ReactNode }) {
                 start: 'top top',
                 end,
                 pin: true,
-                scrub: 0.6,
+                scrub: 0.25,
                 anticipatePin: 1,
                 onUpdate: (self) => light(Math.min(lines.length - 1, Math.floor(self.progress * lines.length))),
               },

@@ -1,5 +1,6 @@
 import Image from 'next/image';
-import { Eyebrow, StandardsMatrix } from '@/components/shared';
+import { Eyebrow } from '@/components/shared/Eyebrow';
+import { StandardsMatrix } from '@/components/shared/StandardsMatrix';
 import { images } from '@/data/assets';
 import { STATUS_WORKS, TESTS } from './tests';
 import styles from './Quality.module.css';

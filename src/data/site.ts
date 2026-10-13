@@ -1,7 +1,12 @@
 import { logos, type ImageAsset } from './assets';
-import { productHref } from './products';
 
 /** Site-wide copy and data shared by the layout and several pages. Copy is verbatim from the mockups. */
+
+/**
+ * Same as products.ts `productHref`, inlined so the layout bundle (Footer) does not pull in the
+ * product dataset.
+ */
+const productHref = (key: string) => `/products#${key}`;
 
 export const company = {
   name: 'Truvolt',

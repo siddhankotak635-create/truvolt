@@ -1,7 +1,7 @@
 'use client';
 
 import { gsap, ScrollTrigger } from './gsap';
-import { isReduced, onRevert } from './state';
+import { isReduced, isRevealPending, motionState, onRevert, whenRevealed } from './state';
 
 /**
  * Scoped motion helpers, ported 1:1 from the mockups' data-dc-script.
@@ -15,14 +15,48 @@ type Scope = HTMLElement;
 const qa = <T extends Element = HTMLElement>(scope: ParentNode, sel: string) =>
   Array.from(scope.querySelectorAll<T>(sel) as NodeListOf<T>);
 
-/** Elements pre-hidden by CSS (html.tv-motion) until their intro state is set. */
+/** Intro targets that CSS paints at a small offset (html.tv-motion, global.css) so their
+ *  transform-only intro starts from what is already on screen. They are never hidden. */
 export const PREHIDDEN = '[data-tv-split], #top [data-tv-reveal]';
 
-/** Make CSS-prehidden elements visible again (call after setting intro "from" states). */
+/** Cancel the CSS no-JS fallback on intro targets (call once their intro tween owns them). */
 export function showPrehidden(scope: Scope, selector: string = PREHIDDEN): void {
   qa(scope, selector).forEach((el) => {
     el.style.visibility = 'visible';
+    el.style.animation = 'none';
   });
+}
+
+/**
+ * True when the page is mounting under a cover (page-transition shutter), so intro "from" states
+ * are never seen being applied and the full intro (with its fade) can play exactly as designed.
+ * False on a first load: the content has already been painted by the server HTML, so intros
+ * must start from what is on screen (transform only, from the CSS offset).
+ */
+export function introCovered(): boolean {
+  return isRevealPending();
+}
+
+/** Offset (px) global.css paints `#top [data-tv-reveal]` at under html.tv-motion. */
+export const REVEAL_OFFSET = 20;
+
+/**
+ * Hold an intro tween/timeline until a running page transition starts revealing the page
+ * (MotionProvider + PageTransition). Outside a transition it does nothing, so first loads and
+ * product switches play exactly as before. "from" states of fromTo tweens still render at once.
+ * Inside a useTvMotion setup the play is cancelled if the scope reverts first.
+ */
+export function afterReveal<T extends gsap.core.Animation>(anim: T): T {
+  if (!isRevealPending()) return anim;
+  let cancelled = false;
+  onRevert(() => {
+    cancelled = true;
+  });
+  anim.pause();
+  whenRevealed().then(() => {
+    if (!cancelled) anim.play();
+  });
+  return anim;
 }
 
 /* ------------------------------------------------------------------ split */
@@ -89,7 +123,10 @@ export type IntroOptions = {
  * `#top [data-tv-reveal]` from {y:20, opacity:0} (0.9s, stagger .1) at 0.3s.
  */
 export function defaultIntro(scope: Scope, opts: IntroOptions = {}): gsap.core.Timeline | null {
-  splitWords(scope);
+  const covered = introCovered();
+  // Visible first: the server HTML paints the headline. The word slide-up only plays when it can
+  // start straight away (fonts ready within the setup cap) or under a transition cover.
+  if (covered || motionState.fontsReady) splitWords(scope);
   const reveals = qa(scope, `#top [data-tv-reveal]${opts.also ? `, ${opts.also}` : ''}`);
   if (isReduced()) {
     reveals.forEach((el) => (el.style.visibility = 'visible'));
@@ -98,10 +135,14 @@ export function defaultIntro(scope: Scope, opts: IntroOptions = {}): gsap.core.T
   const words = qa(scope, '[data-tv-word]');
   const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
   if (words.length) tl.to(words, { y: 0, duration: 1.1, stagger: opts.stagger ?? 0.04 }, opts.delay ?? 0.1);
-  if (reveals.length)
-    tl.fromTo(reveals, { y: 20, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.9, stagger: 0.1 }, (opts.delay ?? 0.1) + 0.2);
+  if (reveals.length) {
+    const at = (opts.delay ?? 0.1) + 0.2;
+    if (covered) tl.fromTo(reveals, { y: 20, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.9, stagger: 0.1 }, at);
+    // Already painted (at the CSS offset): rise into place, never hidden.
+    else tl.fromTo(reveals, { y: REVEAL_OFFSET }, { y: 0, duration: 0.9, stagger: 0.1 }, at);
+  }
   showPrehidden(scope);
-  return tl;
+  return afterReveal(tl);
 }
 
 /* ------------------------------------------------------------------ reveal */
@@ -119,7 +160,8 @@ export function initReveal(scope: Scope, opts: RevealOptions = {}): void {
       gsap.fromTo(
         el,
         { y: opts.y ?? 36, opacity: 0 },
-        { y: 0, opacity: 1, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: el, start: opts.start ?? 'top 88%' } },
+        // once: the reveal never reverses, so its trigger is dropped after it fires.
+        { y: 0, opacity: 1, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: el, start: opts.start ?? 'top 88%', once: true } },
       );
     });
 }
@@ -209,7 +251,10 @@ export function initWords(scope: Scope, opts: { selector?: string } = {}): void 
     const build = () => {
       kill();
       const lines = splitLines(p, text);
-      if (played) return;
+      if (played) {
+        lines.forEach((l) => (l.style.willChange = 'auto'));
+        return;
+      }
       tween = gsap.fromTo(
         lines,
         { yPercent: 100, opacity: 0 },
@@ -222,6 +267,8 @@ export function initWords(scope: Scope, opts: { selector?: string } = {}): void 
           onStart: () => {
             played = true;
           },
+          // Release the per-line compositor layers once the lines are at rest.
+          onComplete: () => lines.forEach((l) => (l.style.willChange = 'auto')),
           scrollTrigger: { trigger: p, start: 'top 85%', once: true },
         },
       );
@@ -237,10 +284,17 @@ export function initWords(scope: Scope, opts: { selector?: string } = {}): void 
       }, 200);
     };
 
+    // Lines measured with the fallback face (fonts later than the setup cap): split again.
+    const onFonts = () => {
+      width = p.clientWidth;
+      build();
+    };
     build();
     window.addEventListener('resize', onResize);
+    window.addEventListener('tv:fontsready', onFonts);
     onRevert(() => {
       window.removeEventListener('resize', onResize);
+      window.removeEventListener('tv:fontsready', onFonts);
       clearTimeout(timer);
       kill();
       p.replaceChildren(...original);
@@ -297,7 +351,7 @@ export function initCounters(scope: Scope, opts: { selector?: string } = {}): vo
         immediateRender: false,
         duration: 1.8,
         ease: 'power2.out',
-        scrollTrigger: { trigger: el, start: 'top 85%' },
+        scrollTrigger: { trigger: el, start: 'top 85%', once: true },
         onUpdate: () => {
           el.textContent = String(Math.round(o.v));
         },
@@ -330,11 +384,25 @@ export function initPageCore(scope: Scope, opts: PageCoreOptions = {}): void {
   if (counters) initCounters(scope);
 }
 
-/** Debounced global ScrollTrigger.refresh (shared by provider and pages). */
+/**
+ * The one way motion code asks for a ScrollTrigger.refresh: debounced, so every scope that
+ * mounts in the same pass, the route change and late layout (fonts, the range head) share a
+ * single refresh. flushRefresh() runs a pending one now (before a page transition opens).
+ */
 let refreshTimer: ReturnType<typeof setTimeout> | undefined;
-export function scheduleRefresh(delay = 120): void {
+let refreshPending = false;
+const runRefresh = () => {
+  refreshPending = false;
   clearTimeout(refreshTimer);
-  refreshTimer = setTimeout(() => ScrollTrigger.refresh(), delay);
+  ScrollTrigger.refresh();
+};
+export function scheduleRefresh(delay = 120): void {
+  refreshPending = true;
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(runRefresh, delay);
+}
+export function flushRefresh(): void {
+  if (refreshPending) runRefresh();
 }
 
 /**

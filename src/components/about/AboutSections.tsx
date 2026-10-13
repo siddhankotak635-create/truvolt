@@ -1,9 +1,13 @@
 import Image from 'next/image';
-import { Eyebrow } from '@/components/shared';
+import { Eyebrow } from '@/components/shared/Eyebrow';
 import { images } from '@/data/assets';
+import { contact } from '@/data/site';
+import { MapFacade } from '@/components/contact/MapFacade';
 import { StandardMarquee } from './StandardMarquee';
 import styles from './About.module.css';
 
+const DIRECTIONS =
+  'https://www.google.com/maps/dir/?api=1&destination=29%2F1%20Nirmal%20Chandra%20Street%2C%20Bowbazar%2C%20Kolkata%20700012';
 const MAP_SRC =
   'https://maps.google.com/maps?q=29%2F1%20Nirmal%20Chandra%20Street%2C%20Bowbazar%2C%20Kolkata%2C%20West%20Bengal%20700012&t=m&z=17&output=embed&iwloc=near';
 
@@ -46,6 +50,7 @@ export function Legacy() {
           height={images.about1.height}
           alt="Truvolt works"
           sizes="100vw"
+          priority
           className={styles.legacyImg}
         />
         <div className={styles.legacyShade} aria-hidden="true" />
@@ -102,12 +107,12 @@ export function WhoWeAre() {
           />
         </div>
         <div data-tv-reveal="" className={styles.map}>
-          <iframe
+          <MapFacade
             title="Truvolt Engineering Co. Pvt. Ltd. on Google Maps"
             src={MAP_SRC}
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            className={styles.mapFrame}
+            frameClassName={styles.mapFrame}
+            lines={[...contact.addressLines]}
+            directions={DIRECTIONS}
           />
         </div>
       </div>

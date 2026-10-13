@@ -48,19 +48,18 @@
   overflow: visible;
   pointer-events: none;
 }
+.fx { will-change: transform; } /* own compositor layer for the running pulses */
 .track,
 .glow,
 .phase,
 .pulse,
-.surge,
-.maskPath {
+.surge {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 .track { stroke: rgba(220, 231, 243, .028); stroke-width: 40px; }
 .ticks { stroke: rgba(220, 231, 243, .12); stroke-width: 1.2px; stroke-linecap: round; }
 .glow { stroke: rgba(150, 185, 245, .07); stroke-width: 30px; }
-.maskPath { stroke-width: 64px; }
 .phase { transition: none; }
 .p0 { stroke-width: 13px; }
 .p1 { stroke: oklch(0.78 0.14 258); stroke-width: 4.5px; }
@@ -132,8 +131,7 @@
   padding: 7px 12px 7px 10px;
   border: 1px solid var(--tv-dline-18);
   border-radius: var(--tv-r-pill);
-  background: rgba(22, 24, 25, .82);
-  backdrop-filter: blur(6px);
+  background: rgba(22, 24, 25, .9); /* solid (no backdrop blur): it rides the head over the braid */
   font-family: var(--tv-mono);
   font-size: 11px;
   line-height: 1;
@@ -367,7 +365,6 @@
   .s1 { stroke-width: 3.5px; }
   .track { stroke-width: 22px; }
   .glow { stroke-width: 16px; }
-  .maskPath { stroke-width: 30px; }
   .u0 { stroke-width: 2px; }
   .u1,
   .u2 { stroke-width: 1.4px; }

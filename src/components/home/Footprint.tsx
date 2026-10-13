@@ -1,14 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type FocusEvent, type PointerEvent } from 'react';
-import { Eyebrow } from '@/components/shared';
+import { Eyebrow } from '@/components/shared/Eyebrow';
 import { countries } from '@/data/site';
 import styles from './Footprint.module.css';
 
 type MapMsg = { tvMap?: 'hover' | 'leave'; id?: number; name?: string };
 
 /**
- * #footprint: country list + D3 map iframe (public/map.html).
+ * #footprint: country list + D3 map iframe (public/map.html), mounted when near the viewport.
  * postMessage both ways:
  *   out → iframe: {tvMap:'hot'|'cool', id} on row hover (mouse), tap (touch) and keyboard focus
  *   in  ← iframe: {tvMap:'hover', id, name} shows the tooltip and highlights the row; {tvMap:'leave'} clears it
@@ -18,6 +18,26 @@ export function Footprint() {
   const tapped = useRef<number | null>(null);
   const lastPointer = useRef<string>('mouse');
   const [tip, setTip] = useState<{ id: number; name: string } | null>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
+  /** The map iframe (and its ~250 KB of d3 + atlas) mounts only once the panel is within 400px of the viewport. */
+  const [near, setNear] = useState(false);
+
+  useEffect(() => {
+    const el = mapRef.current;
+    if (!el || near) return;
+    if (typeof IntersectionObserver === 'undefined') return setNear(true);
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setNear(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: '400px 0px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [near]);
 
   const post = useCallback((msg: { tvMap: 'hot' | 'cool'; id: number }) => {
     frameRef.current?.contentWindow?.postMessage(msg, '*');
@@ -92,8 +112,17 @@ export function Footprint() {
             ))}
           </ul>
         </div>
-        <div data-tv-reveal="" className={styles.map}>
-          <iframe ref={frameRef} data-tv-map="" src="/map.html" title="Countries served by Truvolt" className={styles.frame} />
+        <div ref={mapRef} data-tv-reveal="" className={styles.map}>
+          {near && (
+            <iframe
+              ref={frameRef}
+              data-tv-map=""
+              src="/map.html"
+              title="Countries served by Truvolt"
+              loading="lazy"
+              className={styles.frame}
+            />
+          )}
           <p data-tv-map-tip="" className={styles.tip} style={{ opacity: tip ? 1 : 0 }} aria-hidden="true">
             {tip?.name || 'India'}
           </p>

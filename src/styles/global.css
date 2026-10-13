@@ -137,15 +137,20 @@ html.lenis, html.lenis body { height: auto; }
 }
 .tv-dark { background: var(--tv-ink); color: var(--tv-bg); }
 
-/* ---------------------------------------------------------------- intro pre-hide
- * An inline <head> script adds html.tv-motion (not under reduced motion) before
- * first paint. Intro targets stay hidden until their GSAP "from" state is set
- * (helpers set visibility:visible inline). If JS never runs, the fallback
- * animation reveals them after 2.5s. */
-html.tv-motion [data-tv-split],
-html.tv-motion #top [data-tv-reveal],
+/* ---------------------------------------------------------------- intro first paint
+ * An inline <head> script adds html.tv-motion (not under reduced motion) before first paint.
+ * Intro targets are painted from the first frame (visible first): the headline as plain text,
+ * and the #top reveals at the small offset their transform-only intro rises from (the product
+ * hero media from its larger one). The intro cancels the fallback animation, which settles
+ * them after 2.5s if JS never runs. Only the nav still waits for its fade-in. */
 html.tv-motion [data-tv-nav] {
   visibility: hidden;
   animation: tv-unhide 0s linear 2.5s forwards;
 }
 @keyframes tv-unhide { to { visibility: visible; } }
+html.tv-motion #top [data-tv-reveal] {
+  transform: translateY(20px);
+  animation: tv-settle 0s linear 2.5s forwards;
+}
+html.tv-motion #top [data-tv-reveal][data-tv-hero-media] { transform: translateY(80px); }
+@keyframes tv-settle { to { transform: none; } }

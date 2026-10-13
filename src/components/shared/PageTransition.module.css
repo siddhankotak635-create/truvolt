@@ -1,0 +1,111 @@
+/* Page transition "Ruled Shutter" (Task 21, direction A).
+ * Ten ink slats close over the page top to bottom, the destination name and a 0 → 66 kV
+ * readout play on the closed shutter (the Home preloader in miniature), then the slats open
+ * in the same wave. Each slat keeps a faint top rule, so the closed shutter reads as a stack
+ * of core laminations. Driven by MotionProvider through motionState.shutter. */
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 150; /* above the nav (50) and the Home preloader (100), below the skip link (200) */
+  visibility: hidden;
+  pointer-events: none;
+  color: var(--tv-bg);
+}
+.active {
+  visibility: visible;
+  pointer-events: auto; /* swallow clicks while the page is covered */
+}
+
+.slats {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+.slats i {
+  flex: 1;
+  margin-bottom: -1px; /* no hairline gaps between rows at fractional heights */
+  background: var(--tv-ink);
+  transform: scaleY(0);
+  transform-origin: 50% 0;
+  box-shadow: inset 0 1px 0 rgba(220, 231, 243, .07);
+}
+
+.label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 32px 40px;
+}
+.top {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-family: var(--tv-mono);
+  font-size: 12px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--tv-on-dark-muted);
+  opacity: 0;
+}
+.bottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+.mask {
+  display: block;
+  overflow: hidden;
+  padding-bottom: .06em;
+  margin: 0;
+}
+.name {
+  display: block;
+  font-size: clamp(56px, 9vw, 140px);
+  font-weight: 600;
+  letter-spacing: -.055em;
+  line-height: .85;
+  /* no CSS transform: GSAP owns it (a CSS translate would be read as a px offset and stack with yPercent) */
+}
+.meter {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  padding-bottom: 10px;
+  font-family: var(--tv-mono);
+  font-size: 12px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--tv-on-dark-muted);
+  opacity: 0;
+}
+.meter b {
+  font-weight: 500;
+  color: var(--tv-bg);
+  font-variant-numeric: tabular-nums;
+}
+.bar {
+  position: relative;
+  display: block;
+  width: clamp(120px, 16vw, 220px);
+  height: 1px;
+  overflow: hidden;
+  background: rgba(220, 231, 243, .18);
+}
+.bar i {
+  position: absolute;
+  inset: 0;
+  background: var(--tv-accent-light);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+
+@media (max-width: 767px) {
+  .label { padding: 24px 20px; }
+  .top span:first-child { max-width: 22ch; }
+  .meter { display: none; }
+}

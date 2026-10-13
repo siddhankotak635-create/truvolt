@@ -1,3 +1,5 @@
+import { contact } from '@/data/site';
+import { MapFacade } from './MapFacade';
 import styles from './MapCard.module.css';
 
 const MAP_SRC =
@@ -9,12 +11,13 @@ export function MapCard() {
   return (
     <section className={styles.section} aria-label="Map">
       <div data-tv-reveal="" className={styles.card}>
-        <iframe
+        {/* Click-to-load: the Google embed stays off the page until asked for. */}
+        <MapFacade
           title="Truvolt Engineering Co. Pvt. Ltd. on Google Maps"
           src={MAP_SRC}
-          className={styles.frame}
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
+          frameClassName={styles.frame}
+          lines={[...contact.addressLines]}
+          padBottom
         />
         <div className={styles.pills}>
           <span className={`${styles.pill} ${styles.pillDark}`}>Head office · Kolkata 700012</span>

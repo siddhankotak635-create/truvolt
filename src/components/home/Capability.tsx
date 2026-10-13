@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { Eyebrow } from '@/components/shared';
+import { Eyebrow } from '@/components/shared/Eyebrow';
 import styles from './Capability.module.css';
 
 const BARS: { pct: number; label: string; value: string; accent?: boolean }[] = [

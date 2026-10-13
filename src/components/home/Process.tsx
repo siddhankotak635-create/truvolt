@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { Eyebrow } from '@/components/shared';
+import { Eyebrow } from '@/components/shared/Eyebrow';
 import { images, type ImageAsset } from '@/data/assets';
 import styles from './Process.module.css';
 
@@ -67,10 +67,6 @@ export function Process() {
                   <stop offset=".6" stopColor="#DCE7F3" />
                   <stop offset="1" stopColor="#c9d9f3" />
                 </linearGradient>
-                {/* Pulses only show on the part of the route that is already drawn. */}
-                <mask id="tvDrawnMask" maskUnits="userSpaceOnUse" x="-400" y="-400" width="100000" height="100000">
-                  <path data-tv-tl-maskpath="" fill="none" stroke="#fff" strokeLinecap="round" className={styles.maskPath} />
-                </mask>
               </defs>
               {/* Route ahead: faint backbone track with insulator-like marks either side. */}
               <path data-tv-tl-track="" fill="none" className={styles.track} />
@@ -80,7 +76,17 @@ export function Process() {
               <path data-tv-tl-phase="0" fill="none" stroke="url(#tvPhaseGrad)" className={`${styles.phase} ${styles.p0}`} />
               <path data-tv-tl-phase="1" fill="none" className={`${styles.phase} ${styles.p1}`} />
               <path data-tv-tl-phase="2" fill="none" className={`${styles.phase} ${styles.p2}`} />
-              <g mask="url(#tvDrawnMask)" className={styles.pulses}>
+            </svg>
+            {/* The always-moving parts on their own layer, so the running current never repaints the
+                braid below: pulses (clipped to the drawn part of the route) and arrival surges. */}
+            <svg data-tv-tl-fx="" aria-hidden="true" className={`${styles.svg} ${styles.fx}`} preserveAspectRatio="none">
+              <defs>
+                {/* Pulses only show on the part of the route that is already drawn (HomeMotion sizes the rect). */}
+                <clipPath id="tvDrawnClip" clipPathUnits="userSpaceOnUse">
+                  <rect data-tv-tl-cliprect="" x="-400" y="-400" width="100000" height="0" />
+                </clipPath>
+              </defs>
+              <g clipPath="url(#tvDrawnClip)" className={styles.pulses}>
                 <path data-tv-tl-pulse="0" fill="none" className={`${styles.pulse} ${styles.u0}`} />
                 <path data-tv-tl-pulse="1" fill="none" className={`${styles.pulse} ${styles.u1}`} />
                 <path data-tv-tl-pulse="2" fill="none" className={`${styles.pulse} ${styles.u2}`} />

@@ -81,10 +81,9 @@
 .chip {
   padding: 8px 12px;
   border-radius: var(--tv-r-pill);
-  background: rgba(22, 24, 25, .55);
+  /* solid tint instead of a backdrop blur: the chips ride the sticky stage over the photos */
+  background: rgba(22, 24, 25, .66);
   color: var(--tv-bg);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
   font-family: var(--tv-mono);
   font-size: 11px;
   letter-spacing: .1em;
@@ -125,7 +124,8 @@
 }
 .barFill {
   height: 100%;
-  width: 0%;
+  width: 100%;
+  transform: translateX(-100%); /* HomeMotion slides it in with the stage progress (clipped by .bar) */
   background: var(--tv-bg);
 }
 

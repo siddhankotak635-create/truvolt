@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { Eyebrow } from '@/components/shared';
+import { Eyebrow } from '@/components/shared/Eyebrow';
 import { images, type ImageAsset } from '@/data/assets';
 import { STAGE_CAPTIONS } from './captions';
 import styles from './Flagship.module.css';

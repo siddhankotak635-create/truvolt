@@ -28,10 +28,11 @@
   border-radius: var(--tv-r-pill);
   background: var(--p-bg);
   border: 1px solid var(--p-line);
-  box-shadow: 0 10px 30px rgba(22, 24, 25, .08); /* MotionProvider swaps a stronger one in past 80px */
+  box-shadow: 0 10px 30px rgba(22, 24, 25, .08); /* a stronger one past 80px: [data-scrolled], set by MotionProvider */
   color: var(--p-text);
   transition: background-color .3s, border-color .3s, color .3s, translate .5s var(--tv-ease), visibility 0s;
 }
+.nav[data-scrolled] { box-shadow: 0 14px 36px rgba(22, 24, 25, .16); }
 .dark {
   --p-bg: var(--tv-ink);
   --p-line: rgba(220, 231, 243, .14);
@@ -108,7 +109,10 @@
   bottom: 0;
   left: 0;
   height: 3px;
-  width: 0;
+  /* Fixed box, sized by scaleX from the left edge (Header): moving it never touches layout. */
+  width: 100px;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
   background: var(--p-accent);
   opacity: 0;
   pointer-events: none;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, type ReactNode } from 'react';
-import { BP, initPageCore, useTvMotion } from '@/lib/motion';
+import { afterReveal, BP, initPageCore, introCovered, REVEAL_OFFSET, showPrehidden, useTvMotion } from '@/lib/motion';
 
 /**
  * Product motion, ported from the Product mockup's data-dc-script.
@@ -27,15 +27,25 @@ export function ProductMotion({ children, mode = 'intro' }: { children: ReactNod
     }
 
     if (mode === 'swap') {
+      // A client-side remount: this runs before the new markup is painted, so the fade is unseen.
       gsap.fromTo(swaps, { y: 18, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.7, stagger: 0.05, ease: 'power3.out' });
       gsap.fromTo(media, { y: 0, scale: 1.08, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 1, ease: 'power3.out' });
+    } else if (introCovered()) {
+      // Intro under a page-transition cover (mockup: swaps y 30 stagger .08 at .1, media y 80 expo at .3).
+      afterReveal(
+        gsap
+          .timeline({ defaults: { ease: 'power4.out' } })
+          .fromTo(swaps, { y: 30, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1, stagger: 0.08 }, 0.1)
+          .fromTo(media, { y: 80, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1.3, ease: 'expo.out' }, 0.3),
+      );
     } else {
-      // Intro (mockup: swaps y 30 stagger .08 at .1, media y 80 expo at .3).
+      // First load: the hero is already painted at the CSS offsets (global.css); rise from there.
       gsap
         .timeline({ defaults: { ease: 'power4.out' } })
-        .fromTo(swaps, { y: 30, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1, stagger: 0.08 }, 0.1)
-        .fromTo(media, { y: 80, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1.3, ease: 'expo.out' }, 0.3);
+        .fromTo(swaps, { y: REVEAL_OFFSET }, { y: 0, duration: 1, stagger: 0.08 }, 0.1)
+        .fromTo(media, { y: 80 }, { y: 0, duration: 1.3, ease: 'expo.out' }, 0.3);
     }
+    showPrehidden(scope, '#top [data-tv-reveal]');
 
     // Hero image drift (on a wrapper so the CSS Ken Burns on the <img> keeps running).
     const pan = q('[data-tv-hero-pan]')[0];
@@ -57,13 +67,18 @@ export function ProductMotion({ children, mode = 'intro' }: { children: ReactNod
       const caps: string[] = cap ? JSON.parse(cap.dataset.caps ?? '[]') : [];
       const firstCap = cap?.textContent ?? '';
       let cur = 0;
+      if (bar) {
+        bar.style.width = '100%';
+        bar.style.transform = 'translateX(-100%)'; // = the stylesheet's empty (width 0) bar
+      }
       ScrollTrigger.create({
         trigger: wrap,
         start: 'top 130px',
         end: 'bottom bottom',
         scrub: true,
         onUpdate: (self) => {
-          if (bar) bar.style.width = `${self.progress * 100}%`;
+          // full-width bar slid in from the left inside its clipped track (no layout per frame)
+          if (bar) bar.style.transform = `translateX(${((self.progress - 1) * 100).toFixed(3)}%)`;
           const idx = Math.min(imgs.length - 1, Math.floor(self.progress * imgs.length));
           if (idx === cur) return;
           cur = idx;
@@ -80,7 +95,7 @@ export function ProductMotion({ children, mode = 'intro' }: { children: ReactNod
         },
       });
       return () => {
-        if (bar) bar.style.width = '';
+        if (bar) bar.style.transform = bar.style.width = '';
         labels.forEach((l) => (l.style.opacity = ''));
         if (cap) cap.textContent = firstCap;
       };

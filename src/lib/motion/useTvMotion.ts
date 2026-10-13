@@ -4,6 +4,40 @@ import type { RefObject } from 'react';
 import type Lenis from 'lenis';
 import { gsap, ScrollTrigger, useGSAP } from './gsap';
 import { isFine, isReduced, motionState, withCollector } from './state';
+import { scheduleRefresh } from './helpers';
+
+/** Longest a setup waits for webfonts. Content is already painted, so intros must not start late. */
+const FONT_WAIT_MS = 300;
+let fontsSettled = false;
+let fontWait: Promise<void> | null = null;
+
+/** Resolves when webfonts are ready or after FONT_WAIT_MS, whichever is first. A late font load
+ *  sets motionState.fontsReady, refreshes the triggers once and fires `tv:fontsready` so line splits
+ *  measured with the fallback face can re-split. Already resolved after the first load. */
+function fontsOrTimeout(): Promise<void> {
+  if (fontsSettled) return Promise.resolve();
+  if (!fontWait) {
+    const ready = typeof document !== 'undefined' && document.fonts?.ready ? document.fonts.ready : Promise.resolve();
+    let timedOut = false;
+    fontWait = Promise.race([
+      ready.then(() => {
+        fontsSettled = true;
+        motionState.fontsReady = true;
+        if (timedOut) {
+          window.dispatchEvent(new Event('tv:fontsready'));
+          scheduleRefresh();
+        }
+      }),
+      new Promise<void>((resolve) =>
+        setTimeout(() => {
+          timedOut = true;
+          resolve();
+        }, FONT_WAIT_MS),
+      ),
+    ]);
+  }
+  return fontWait;
+}
 
 export type TvMotionContext = {
   gsap: typeof gsap;
@@ -25,7 +59,7 @@ export type TvMotionSetup = (ctx: TvMotionContext) => void | (() => void);
 /**
  * Page/section motion hook. Wraps useGSAP({ scope }) so every tween and
  * ScrollTrigger created in `setup` is reverted on unmount (route change) or
- * when `deps` change. Setup runs after document.fonts.ready.
+ * when `deps` change. Setup runs after document.fonts.ready, capped at 300ms.
  *
  *   const ref = useRef<HTMLDivElement>(null);
  *   useTvMotion(ref, ({ scope, mm }) => { initPageCore(scope); mm.add(BP.desktop, () => {...}); });
@@ -38,10 +72,7 @@ export function useTvMotion(scopeRef: RefObject<HTMLElement | null>, setup: TvMo
       let userCleanup: void | (() => void);
       const restorers: (() => void)[] = [];
 
-      const ready: Promise<unknown> =
-        typeof document !== 'undefined' && document.fonts?.ready ? document.fonts.ready : Promise.resolve();
-
-      ready.then(() => {
+      fontsOrTimeout().then(() => {
         const scope = scopeRef.current;
         if (cancelled || !scope) return;
         context.add(() => {
@@ -74,10 +105,9 @@ export function useTvMotion(scopeRef: RefObject<HTMLElement | null>, setup: TvMo
           };
           userCleanup = withCollector(restorers, () => setup(ctx));
         });
-        // New triggers change layout for everything below; refresh once laid out.
-        requestAnimationFrame(() => {
-          if (!cancelled) ScrollTrigger.refresh();
-        });
+        // New triggers change layout for everything below. One debounced refresh covers every
+        // scope that mounts in the same pass (and the provider's route-change refresh).
+        scheduleRefresh();
       });
 
       return () => {

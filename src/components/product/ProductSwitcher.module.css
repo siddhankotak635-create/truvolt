@@ -6,12 +6,16 @@
   margin: 0 auto;
   padding: 96px var(--tv-gutter) 0;
 }
-/* Pre-hidden until the intro timeline sets its "from" state (mockup: subnav y -16 → 0). */
+/* Visible first (mockup intro: y -16 → 0). On the first load it is painted at the intro's start
+ * offset and only slides (html.tv-initial, MotionProvider: the fade is skipped because the row
+ * is already on screen); under a page-transition cover the full fade + slide plays. The
+ * fallback settles it after 2.5s if JS never runs (its end state equals the intro's). */
 :global(html.tv-motion) .subnav {
-  visibility: hidden;
-  animation: subnav-unhide 0s linear 2.5s forwards;
+  transform: translateY(-16px);
+  animation: subnav-settle 0s linear 2.5s forwards;
 }
-@keyframes subnav-unhide { to { visibility: visible; } }
+:global(html.tv-initial) .subnav { opacity: 1 !important; visibility: visible !important; }
+@keyframes subnav-settle { to { transform: none; } }
 
 .row {
   display: flex;
@@ -21,9 +25,7 @@
   max-width: 100%;
   padding: 6px;
   border-radius: var(--tv-r-pill);
-  background: rgba(220, 231, 243, .8);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: rgba(220, 231, 243, .8); /* in flow over the flat page background: no backdrop blur needed */
   border: 1px solid var(--tv-line-08);
 }
 

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ProductCard } from '@/components/shared';
+import { ProductCard } from '@/components/shared/ProductCard';
 import { CARDS, type ProductKey } from '@/data/products';
 import styles from './OtherProducts.module.css';
 

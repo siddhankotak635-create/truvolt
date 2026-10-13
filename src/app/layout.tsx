@@ -5,6 +5,7 @@ import '@/styles/global.css';
 import { sans, mono } from './fonts';
 import { Header } from '@/components/shared/Header';
 import { Footer } from '@/components/shared/Footer';
+import { PageTransition } from '@/components/shared/PageTransition';
 import { MotionProvider } from '@/lib/motion';
 
 export const metadata: Metadata = {
@@ -43,6 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </main>
           <Footer />
+          <PageTransition />
         </MotionProvider>
       </body>
     </html>

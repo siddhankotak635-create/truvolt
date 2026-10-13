@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { CtaBand } from '@/components/shared';
+import { CtaBand } from '@/components/shared/CtaBand';
 import { QualityMotion } from '@/components/quality/QualityMotion';
 import {
   QualityHero,

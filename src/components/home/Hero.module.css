@@ -84,8 +84,9 @@
 }
 
 /* ---- media card (expands to full bleed while pinned) ----
- * Centred with auto margins rather than translateX(-50%) so GSAP's y (intro)
- * and width (scrub) tweens never fight over the transform. */
+ * Centred with auto margins rather than translateX(-50%) so GSAP's y (intro) never fights
+ * over the transform. While pinned, HomeMotion lays it out full screen and animates a
+ * clip-path window from this strip to the full frame. */
 .media {
   position: absolute;
   left: 0;
@@ -99,19 +100,25 @@
   background: var(--tv-placeholder);
   z-index: 1;
 }
-/* Pre-hidden like the other intro targets until HomeMotion sets its "from" state. */
+/* Visible from the first paint, at the offset its intro rises from (HomeMotion cancels the
+ * no-JS fallback that settles it after 2.5s). */
 :global(html.tv-motion) .media {
-  visibility: hidden;
-  animation: heroUnhide 0s linear 2.5s forwards;
+  transform: translateY(120px);
+  animation: heroSettle 0s linear 2.5s forwards;
 }
-@keyframes heroUnhide { to { visibility: visible; } }
+@keyframes heroSettle { to { transform: none; } }
 .img {
   object-fit: cover;
   filter: saturate(.85) contrast(1.05);
   animation: heroKenburns 18s ease-in-out infinite alternate;
 }
-/* local copy of global tv-kenburns (module keyframe names are scoped) */
-@keyframes heroKenburns { from { transform: scale(1.08) translateY(-2%); } to { transform: scale(1.18) translateY(2%); } }
+/* local copy of global tv-kenburns (module keyframe names are scoped). The drift is 2% of the
+ * photo's height; --kb-u (1% of the visible card's height, set by the pinned clip window)
+ * keeps it that while the photo is laid out full screen. */
+@keyframes heroKenburns {
+  from { transform: scale(1.08) translateY(calc(var(--kb-u, 1%) * -2)); }
+  to { transform: scale(1.18) translateY(calc(var(--kb-u, 1%) * 2)); }
+}
 .shade {
   position: absolute;
   inset: 0;

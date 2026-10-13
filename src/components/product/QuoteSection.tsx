@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
-import { Button } from '@/components/shared';
+import { Button } from '@/components/shared/Button';
 import styles from './QuoteSection.module.css';
 
 type FieldName = 'name' | 'company' | 'email' | 'phone' | 'rating' | 'voltage' | 'message';

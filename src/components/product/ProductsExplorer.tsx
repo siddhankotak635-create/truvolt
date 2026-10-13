@@ -1,11 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { DEFAULT_PRODUCT, getProduct, isProductKey, type ProductKey } from '@/data/products';
+import { getImageProps } from 'next/image';
+import { images } from '@/data/assets';
+import { DEFAULT_PRODUCT, getProduct, isProductKey, PRODUCTS, type ProductKey } from '@/data/products';
 import { gsap, isReduced, MotionScope, useMotion } from '@/lib/motion';
 import { Cutaway, hasCutaway } from './Cutaway';
 import { OtherProducts } from './OtherProducts';
-import { ProductHero } from './ProductHero';
+import { HERO_SIZES, ProductHero } from './ProductHero';
 import { ProductMotion } from './ProductMotion';
 import { ProductSpecs } from './ProductSpecs';
 import { PRODUCT_PANEL_ID, ProductSwitcher, productTabId } from './ProductSwitcher';
@@ -13,6 +15,47 @@ import { QuoteSection } from './QuoteSection';
 
 const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 const TITLE_SUFFIX = ' | Truvolt Engineering';
+
+/**
+ * Images to warm after the page is idle, with the exact props they render with, so the browser
+ * picks the same srcset candidate the page will request (memory-cache hit, no flash on switch):
+ * every product's hero photo, plus the cutaway stage (desktop) and card (mobile) images.
+ * The cutaway sizes mirror Cutaway.tsx.
+ */
+const CUTAWAY = [images.engineeringProcess, images.qualityProcess3, images.qualityProcess6];
+const WARM: Parameters<typeof getImageProps>[0][] = [
+  ...PRODUCTS.map((p) => ({ src: p.image, alt: '', fill: true, sizes: HERO_SIZES })),
+  ...CUTAWAY.map((i) => ({ src: i.src, width: i.width, height: i.height, alt: '', sizes: '(min-width: 1100px) 50vw, 1px' })),
+  ...CUTAWAY.map((i) => ({ src: i.src, width: i.width, height: i.height, alt: '', sizes: '(min-width: 768px) 33vw, 100vw' })),
+];
+
+/** Load + decode WARM once the main thread is idle. Returns the Image objects so they stay referenced. */
+function warmImages(): () => void {
+  const held: HTMLImageElement[] = [];
+  let cancelled = false;
+  const run = () => {
+    if (cancelled) return;
+    for (const spec of WARM) {
+      const { props } = getImageProps(spec);
+      const im = new Image();
+      im.decoding = 'async';
+      if (props.sizes) im.sizes = props.sizes;
+      if (props.srcSet) im.srcset = props.srcSet;
+      im.src = props.src;
+      im.decode().catch(() => {});
+      held.push(im);
+    }
+  };
+  // Safari has no requestIdleCallback.
+  const ric = typeof window.requestIdleCallback === 'function';
+  const id = ric ? window.requestIdleCallback(run, { timeout: 2500 }) : window.setTimeout(run, 1200);
+  return () => {
+    cancelled = true;
+    if (ric) window.cancelIdleCallback(id);
+    else clearTimeout(id);
+    held.length = 0;
+  };
+}
 
 function keyFromHash(): ProductKey {
   const h = decodeURIComponent(location.hash.replace(/^#/, '')).toLowerCase();
@@ -97,6 +140,9 @@ export function ProductsExplorer() {
       setActive(key);
     }
   }, []);
+
+  // Warm every product's hero image (and the cutaway images) so a switch never waits on the network.
+  useEffect(() => warmImages(), []);
 
   // Back/forward and manual hash edits.
   useEffect(() => {

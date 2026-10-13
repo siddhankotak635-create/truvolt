@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, type KeyboardEvent } from 'react';
 import { PRODUCTS, productHref, type ProductKey } from '@/data/products';
-import { useTvMotion } from '@/lib/motion';
+import { afterReveal, useTvMotion } from '@/lib/motion';
 import styles from './ProductSwitcher.module.css';
 
 export const PRODUCT_PANEL_ID = 'product-panel';
@@ -25,7 +25,7 @@ export function ProductSwitcher({ active, onSelect }: { active: ProductKey; onSe
       gsap.set(scope, { autoAlpha: 1 });
       return;
     }
-    gsap.fromTo(scope, { y: -16, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.8, ease: 'power4.out', delay: 0.1 });
+    afterReveal(gsap.fromTo(scope, { y: -16, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.8, ease: 'power4.out', delay: 0.1 }));
   });
 
   useEffect(() => {

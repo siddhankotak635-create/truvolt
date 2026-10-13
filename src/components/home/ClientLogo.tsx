@@ -6,7 +6,8 @@ import styles from './Clients.module.css';
 
 /**
  * Client logo with the mockup's error fallback: if the image fails, show the
- * short name as text. Plain <img> (not next/image) so onError can swap it.
+ * short name as text. Plain <img> (not next/image) so onError can swap it; the files are already
+ * sized for the logo box at 2x (see assets.ts `logos`), with fixed width/height to reserve space.
  */
 export function ClientLogo({ client }: { client: Client }) {
   const [failed, setFailed] = useState(false);

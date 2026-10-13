@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { CtaBand } from '@/components/shared';
+import { CtaBand } from '@/components/shared/CtaBand';
 import { images } from '@/data/assets';
 import { HomeMotion } from '@/components/home/HomeMotion';
 import { Preloader } from '@/components/home/Preloader';

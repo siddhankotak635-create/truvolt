@@ -1,7 +1,19 @@
 'use client';
 
 import { useRef, type ReactNode } from 'react';
-import { BP, initPageCore, layoutMetrics, scheduleRefresh, showPrehidden, splitWords, useTvMotion } from '@/lib/motion';
+import {
+  afterReveal,
+  BP,
+  initPageCore,
+  isRevealPending,
+  layoutMetrics,
+  motionState,
+  REVEAL_OFFSET,
+  scheduleRefresh,
+  showPrehidden,
+  splitWords,
+  useTvMotion,
+} from '@/lib/motion';
 import { STAGE_CAPTIONS } from './captions';
 import { LOADED_CLASS, LOADED_KEY } from './Preloader';
 
@@ -75,10 +87,13 @@ export function HomeMotion({ children }: { children: ReactNode }) {
     const tlWrap = one('[data-tv-tl-step]')?.parentElement?.parentElement;
     const svgEl = <T extends Element>(sel: string) => one(sel) as unknown as T | undefined;
     const svg = svgEl<SVGSVGElement>('[data-tv-tl-svg]');
+    /** Overlay with the moving parts (current pulses, arrival surges) on its own layer. */
+    const svgFx = svgEl<SVGSVGElement>('[data-tv-tl-fx]');
+    /** Clip rect: pulses only show on the drawn part of the route (top of the timeline → drawn tip). */
+    const drawnClip = svgEl<SVGRectElement>('[data-tv-tl-cliprect]');
     const track = svgEl<SVGPathElement>('[data-tv-tl-track]');
     const ticks = svgEl<SVGPathElement>('[data-tv-tl-ticks]');
     const glow = svgEl<SVGPathElement>('[data-tv-tl-glow]');
-    const maskPath = svgEl<SVGPathElement>('[data-tv-tl-maskpath]');
     const phaseEls = q('[data-tv-tl-phase]') as unknown as SVGPathElement[];
     const pulseEls = q('[data-tv-tl-pulse]') as unknown as SVGPathElement[];
     const surgeEls = q('[data-tv-tl-surge]') as unknown as SVGPathElement[];
@@ -157,10 +172,11 @@ export function HomeMotion({ children }: { children: ReactNode }) {
       return { lens, scale: total / (lens[lens.length - 1] || 1), total };
     };
     const buildWave = (desktop: boolean): Wave | null => {
-      if (!tlWrap || !svg || !track || !glow || !maskPath || phaseEls.length < 3 || !nodes.length) return null;
+      if (!tlWrap || !svg || !track || !glow || phaseEls.length < 3 || !nodes.length) return null;
       const W = tlWrap.clientWidth;
       const H = tlWrap.clientHeight;
       svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      svgFx?.setAttribute('viewBox', `0 0 ${W} ${H}`);
       const nb = nodes.map(boxIn);
       const nodeYs = nb.map((r) => (r.t + r.b) / 2);
       const cx = desktop ? W / 2 : (nb[0].l + nb[0].r) / 2;
@@ -233,7 +249,6 @@ export function HomeMotion({ children }: { children: ReactNode }) {
       });
       track.setAttribute('d', back.d);
       const bb = asLine(glow, back.d, back.lens);
-      asLine(maskPath, back.d, back.lens);
       // Insulator marks: short paired ticks either side of the route, every 46px.
       if (ticks) {
         let d = '';
@@ -279,16 +294,26 @@ export function HomeMotion({ children }: { children: ReactNode }) {
       const envY = wave.env[kb.i];
       PHASES.forEach((p, pi) => set(phaseEls[pi], wave.lines[pi], p.lag ? at(y - p.lag * envY) : kb));
       if (glow) set(glow, wave.bb, kb);
-      if (maskPath) set(maskPath, wave.bb, at(y - PHASES[2].lag * envY));
+      // Drawn part for the pulses: everything above the trailing phase's tip (the route only ever
+      // moves down), plus the round cap the old stroked mask had past its end.
+      if (drawnClip) {
+        const k = at(y - PHASES[2].lag * envY);
+        const L = lenAt(wave.bb, k);
+        const cy = wave.ys[k.i] + (wave.ys[k.j] - wave.ys[k.i]) * k.f;
+        drawnClip.setAttribute('height', L > 0.5 ? String((cy + CLIP_TOP + (wave.desktop ? 32 : 15)).toFixed(1)) : '0');
+      }
       return { x: wave.xs[kb.i] + (wave.xs[kb.j] - wave.xs[kb.i]) * kb.f, y: Math.max(0, Math.min(wave.endY, y)) };
     };
-    const clearWave = () =>
-      [...phaseEls, glow, maskPath].forEach((el) => {
+    const CLIP_TOP = 400; // the clip rect starts 400px above the timeline (Process.tsx)
+    const clearWave = () => {
+      [...phaseEls, glow].forEach((el) => {
         if (!el) return;
         el.style.strokeDasharray = '';
         el.style.strokeDashoffset = '';
         el.style.opacity = '';
       });
+      drawnClip?.setAttribute('height', '100000'); // static / reduced: the whole route is drawn
+    };
     const showStage = (k: number) => {
       if (chipStage) chipStage.textContent = STAGES[k][0];
       if (chipKv) chipKv.textContent = String(STAGES[k][1]);
@@ -322,7 +347,6 @@ export function HomeMotion({ children }: { children: ReactNode }) {
     }
 
     /* ------------------------------------------------ preloader + hero intro */
-    const words = splitWords(scope);
     const loader = one('[data-tv-loader]');
     const num = one('[data-tv-loader-num]');
     const heroMedia = one('[data-tv-hero-media]');
@@ -332,6 +356,18 @@ export function HomeMotion({ children }: { children: ReactNode }) {
     } catch {
       showLoader = !!loader;
     }
+    // Arriving through a page transition: the shutter has already played the loader's part.
+    const underShutter = isRevealPending();
+    if (underShutter) {
+      if (showLoader) markLoaded();
+      showLoader = false;
+    }
+    // Covered (preloader or shutter): nobody sees the "from" states being applied, so the intro
+    // plays exactly as designed. Otherwise the server HTML is already on screen (visible first):
+    // the headline only slides up when fonts were ready within the setup cap, and the hero copy
+    // and media rise from the offsets CSS painted them at, without hiding them.
+    const covered = (showLoader && !!loader && !!num) || underShutter;
+    const words = covered || motionState.fontsReady ? splitWords(scope) : [];
     const intro = gsap.timeline({ defaults: { ease: 'power4.out' } });
     if (showLoader && loader && num) {
       loader.style.animation = 'none'; // cancel the CSS no-JS fallback
@@ -363,25 +399,147 @@ export function HomeMotion({ children }: { children: ReactNode }) {
     if (words.length) intro.to(words, { y: 0, duration: 1.1, stagger: 0.06 }, showLoader ? '-=0.55' : 0.1);
     const heroReveals = q('#top [data-tv-reveal]');
     if (heroReveals.length) {
-      intro.fromTo(heroReveals, { y: 24, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.9, stagger: 0.1 }, words.length ? '-=0.8' : 0.1);
+      const at = words.length ? '-=0.8' : 0.1;
+      if (covered) intro.fromTo(heroReveals, { y: 24, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.9, stagger: 0.1 }, at);
+      else intro.fromTo(heroReveals, { y: REVEAL_OFFSET }, { y: 0, duration: 0.9, stagger: 0.1 }, at);
     }
-    if (heroMedia) intro.fromTo(heroMedia, { y: 120, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1.4, ease: 'expo.out' }, '-=1');
+    if (heroMedia) {
+      heroMedia.style.animation = 'none'; // cancel the CSS no-JS fallback (Hero.module.css)
+      if (covered) intro.fromTo(heroMedia, { y: 120, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1.4, ease: 'expo.out' }, '-=1');
+      else intro.fromTo(heroMedia, { y: 120 }, { y: 0, duration: 1.4, ease: 'expo.out' }, '-=1');
+    }
     showPrehidden(scope);
+    afterReveal(intro); // after a page transition the intro waits for the shutter to open
 
-    /* ------------------------------------------------ hero pinned: media expands, copy fades, statement appears */
+    /* ------------------------------------------------ hero pinned: media expands, copy fades, statement appears
+     * The card grows from the content-width strip (26svh, 5vh below the fold, radius 28) to the
+     * full screen. Instead of tweening its width/height/bottom/radius (layout + a re-raster of the
+     * filtered Ken Burns photo every frame), the card is laid out at its full-screen size once and
+     * a clip-path window is animated over it. Its children are mapped onto that window with the
+     * independent `translate`/`scale` properties (which compose with the Ken Burns `transform`):
+     * the photo gets the object-fit: cover scale it would have at the window's size, the shade is
+     * stretched onto the window, and the caption is anchored to the window's corners. What is on
+     * screen is the same box, frame for frame; the browser only re-clips. */
     const hero = one('[data-tv-hero]');
     if (hero && heroMedia) {
+      const heroImg = heroMedia.querySelector<HTMLImageElement>('img');
+      const heroShade = heroMedia.querySelector<HTMLElement>(':scope > div:not([data-tv-hero-caption])');
+      const heroCaption = one('[data-tv-hero-caption]');
+      const imgStyle = heroImg?.getAttribute('style') ?? null; // next/image's inline fill box
+      const g = { W: 0, SVH: 0, VH: 0, content: 0, iw: 1280, ih: 853, cap: { l: 28, r: 28, b: 24 }, kb: -1 };
+      const probe = (h: string) => {
+        const el = document.createElement('div');
+        el.style.cssText = `position:absolute;left:0;top:0;width:0;height:${h};visibility:hidden;pointer-events:none`;
+        hero.appendChild(el);
+        const v = el.getBoundingClientRect().height;
+        el.remove();
+        return v;
+      };
+      const measure = () => {
+        g.W = document.documentElement.clientWidth;
+        g.SVH = probe('100svh');
+        g.VH = probe('100vh');
+        g.content = layoutMetrics().content;
+        if (heroImg?.naturalWidth) {
+          g.iw = heroImg.naturalWidth;
+          g.ih = heroImg.naturalHeight;
+        }
+        // Lay the photo out at its full-frame cover size (centred), so object-fit never crops
+        // inside the element and scaling it shows exactly the window's cover crop.
+        if (heroImg) {
+          const c = Math.max(g.W / g.iw, g.SVH / g.ih);
+          const iw = g.iw * c;
+          const ih = g.ih * c;
+          Object.assign(heroImg.style, {
+            width: iw + 'px',
+            height: ih + 'px',
+            left: (g.W - iw) / 2 + 'px',
+            top: (g.SVH - ih) / 2 + 'px',
+            maxWidth: 'none', // global img/video max-width: 100% would cap it
+            right: 'auto',
+            bottom: 'auto',
+          });
+        }
+        if (heroCaption) {
+          heroCaption.style.left = heroCaption.style.right = heroCaption.style.bottom = '';
+          const cs = getComputedStyle(heroCaption);
+          g.cap = { l: parseFloat(cs.left) || 0, r: parseFloat(cs.right) || 0, b: parseFloat(cs.bottom) || 0 };
+        }
+        g.kb = -1;
+      };
+      const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+      const view = { p: 0 };
+      /** Paint progress p (0 = strip, 1 = full screen) of the original width/height/bottom/radius tween. */
+      const apply = (p: number) => {
+        const { W, SVH } = g;
+        const w = lerp(g.content, W, p);
+        const h = lerp(0.26 * SVH, SVH, p);
+        const b = lerp(-0.05 * g.VH, 0, p); // the box's bottom offset (negative: below the fold)
+        const r = lerp(28, 0, p);
+        const side = (W - w) / 2;
+        const top = SVH - h - b;
+        // The bottom corners sit below the hero's clipped edge throughout (|b| > r), so the
+        // window is cut at the element's bottom with only the top corners rounded.
+        heroMedia.style.clipPath = `inset(${top.toFixed(2)}px ${side.toFixed(2)}px ${Math.max(0, b).toFixed(2)}px round ${r.toFixed(2)}px ${r.toFixed(2)}px 0 0)`;
+        const ty = top + h / 2 - SVH / 2;
+        if (heroImg) {
+          const s = Math.max(w / g.iw, h / g.ih) / Math.max(W / g.iw, SVH / g.ih); // window cover / frame cover
+          heroImg.style.translate = `0px ${ty.toFixed(2)}px`;
+          heroImg.style.scale = s.toFixed(5);
+          // Ken Burns drifts by a % of the photo's own height: keep it a % of the window's.
+          const kb = h / s / 100;
+          if (Math.abs(kb - g.kb) > 0.01) {
+            g.kb = kb;
+            heroImg.style.setProperty('--kb-u', kb.toFixed(3) + 'px');
+          }
+        }
+        if (heroShade) {
+          heroShade.style.translate = `0px ${ty.toFixed(2)}px`;
+          heroShade.style.scale = `${(w / W).toFixed(5)} ${(h / SVH).toFixed(5)}`;
+        }
+        // The caption only shows from p = .5 (it is transparent before), anchored to the window.
+        if (heroCaption && p >= 0.45) {
+          heroCaption.style.left = (side + g.cap.l).toFixed(2) + 'px';
+          heroCaption.style.right = (side + g.cap.r).toFixed(2) + 'px';
+          heroCaption.style.bottom = (b + g.cap.b).toFixed(2) + 'px';
+        }
+      };
+      measure();
+      // The card's full-screen layout (the tween's end state); the window starts as the strip.
+      gsap.set(heroMedia, { width: '100%', height: '100%', bottom: 0, borderRadius: 0 });
+      apply(0);
+      const onImg = () => {
+        measure();
+        apply(view.p);
+      };
+      if (heroImg && !heroImg.complete) on(heroImg, 'load', onImg);
+      cleanups.push(() => {
+        heroMedia.style.clipPath = '';
+        if (heroImg) {
+          if (imgStyle === null) heroImg.removeAttribute('style');
+          else heroImg.setAttribute('style', imgStyle);
+        }
+        if (heroShade) heroShade.style.translate = heroShade.style.scale = '';
+        if (heroCaption) heroCaption.style.left = heroCaption.style.right = heroCaption.style.bottom = '';
+      });
       const heroTl = gsap.timeline({
-        scrollTrigger: { trigger: hero, start: 'top top', end: '+=160%', pin: true, scrub: 0.8, anticipatePin: 1, invalidateOnRefresh: true },
+        scrollTrigger: {
+          trigger: hero,
+          start: 'top top',
+          end: '+=160%',
+          pin: true,
+          scrub: 0.25,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+          onRefresh: () => {
+            measure();
+            apply(view.p);
+          },
+        },
       });
       heroTl
         .to(one('[data-tv-hero-copy]') ?? [], { y: -120, opacity: 0, ease: 'none', duration: 0.5 }, 0)
-        .fromTo(
-          heroMedia,
-          { width: () => layoutMetrics().content + 'px', height: '26svh', bottom: '-5vh', borderRadius: 28 },
-          { width: () => document.documentElement.clientWidth + 'px', height: '100svh', bottom: 0, borderRadius: 0, ease: 'none', duration: 1 },
-          0,
-        )
+        .fromTo(view, { p: 0 }, { p: 1, ease: 'none', duration: 1, onUpdate: () => apply(view.p) }, 0)
         .to(one('[data-tv-hero-caption]') ?? [], { opacity: 1, duration: 0.2 }, 0.5)
         .fromTo(one('[data-tv-hero-statement]') ?? [], { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.4 }, 0.75);
     }
@@ -402,7 +560,8 @@ export function HomeMotion({ children }: { children: ReactNode }) {
         end: 'bottom bottom',
         scrub: true,
         onUpdate: (self) => {
-          if (sbar) sbar.style.width = self.progress * 100 + '%';
+          // full-width fill slid in from the left inside the clipped track (no layout per frame)
+          if (sbar) sbar.style.transform = `translateX(${((self.progress - 1) * 100).toFixed(3)}%)`;
           const idx = Math.min(stages.length - 1, Math.floor(self.progress * stages.length));
           if (idx !== cur) {
             cur = idx;
@@ -427,29 +586,29 @@ export function HomeMotion({ children }: { children: ReactNode }) {
           gsap.set(cap, { clearProps: 'opacity,transform' });
           cap.textContent = STAGE_CAPTIONS[0];
         }
-        if (sbar) sbar.style.width = '';
+        if (sbar) sbar.style.transform = '';
         setChips(0);
       };
     });
 
-    /* ------------------------------------------------ client rails: drift, accelerate with scroll velocity, pause on hover/tap */
+    /* ------------------------------------------------ client rails: drift, accelerate with scroll velocity, pause on hover/tap
+     * Velocity comes from the provider's single global trigger (motionState.velocity, decayed
+     * there). Each rail only ticks while it is on screen; its loop period is measured once (and
+     * again after a refresh / resize), and its x is written through a GSAP quickSetter. */
     const rails = q('[data-tv-rail]');
     if (rails.length) {
-      let vel = 0;
-      ST.create({ start: 0, end: 'max', onUpdate: (self) => void (vel = self.getVelocity()) });
-      // onUpdate only fires while scrolling, so after a jump-scroll the last velocity would stick.
-      // Decay it toward 0 every frame (about 90% gone in 350ms); active scrolling keeps refreshing it.
-      const decay = (_t: number, dt: number) => {
-        vel = Math.abs(vel) < 1 ? 0 : vel * Math.pow(0.9, dt / 16.67);
-      };
-      gsap.ticker.add(decay);
-      cleanups.push(() => gsap.ticker.remove(decay));
       rails.forEach((rail) => {
         let x = 0;
         let paused = false;
+        let visible = false;
+        let half = 0;
         const dir = Number(rail.dataset.tvRailDir) || 1;
         const box = rail.parentElement ?? rail;
         const lists = Array.from(rail.children) as HTMLElement[];
+        const setX = gsap.quickSetter(rail, 'x', 'px') as (v: number) => void;
+        const remeasure = () => {
+          half = 0;
+        };
         on(box, 'pointerenter', (e) => {
           if (e.pointerType === 'mouse') paused = true;
         });
@@ -459,21 +618,29 @@ export function HomeMotion({ children }: { children: ReactNode }) {
         on(box, 'pointerup', (e) => {
           if (e.pointerType !== 'mouse') paused = !paused; // touch: tap toggles the hold
         });
+        const io = new IntersectionObserver(([entry]) => {
+          visible = entry.isIntersecting;
+        });
+        io.observe(box);
+        ST.addEventListener('refresh', remeasure);
+        onWin('resize', remeasure);
         const tick = (_t: number, dt: number) => {
-          if (paused) return;
+          if (paused || !visible) return;
           // Loop period = offset of the duplicate list (mockup: scrollWidth / 2).
-          const half = lists.length > 1 ? lists[1].offsetLeft - lists[0].offsetLeft : rail.scrollWidth / 2;
+          if (!half) half = lists.length > 1 ? lists[1].offsetLeft - lists[0].offsetLeft : rail.scrollWidth / 2;
           if (!half) return;
-          const speed = 0.04 + Math.min(0.6, Math.abs(vel) / 4000);
+          const speed = 0.04 + Math.min(0.6, Math.abs(motionState.velocity) / 4000);
           x -= dir * speed * dt;
           if (x <= -half) x += half;
           if (x > 0) x -= half;
-          rail.style.transform = 'translate3d(' + x + 'px,0,0)';
+          setX(x);
         };
         gsap.ticker.add(tick);
         cleanups.push(() => {
           gsap.ticker.remove(tick);
-          rail.style.transform = '';
+          io.disconnect();
+          ST.removeEventListener('refresh', remeasure);
+          gsap.set(rail, { clearProps: 'transform' });
         });
       });
     }
@@ -482,10 +649,12 @@ export function HomeMotion({ children }: { children: ReactNode }) {
     q('[data-tv-bar]').forEach((row) => {
       const fill = row.querySelector<HTMLElement>('[data-tv-bar-fill]');
       if (!fill) return;
+      // The fill keeps its final width (--w) and slides in from the left inside the clipped pill
+      // track: the same growing bar as a width tween, without layout per frame.
       gsap.fromTo(
         fill,
-        { width: '0%' },
-        { width: row.dataset.tvBar + '%', duration: 1.4, ease: 'expo.out', scrollTrigger: { trigger: row, start: 'top 85%' } },
+        { xPercent: -100 },
+        { xPercent: 0, duration: 1.4, ease: 'expo.out', scrollTrigger: { trigger: row, start: 'top 85%', once: true } },
       );
     });
 
@@ -500,7 +669,7 @@ export function HomeMotion({ children }: { children: ReactNode }) {
       gsap.to(trackEl, {
         x: () => -dist(),
         ease: 'none',
-        scrollTrigger: { trigger: hs, start: 'top top', end: () => '+=' + dist(), pin: true, scrub: 0.6, invalidateOnRefresh: true, anticipatePin: 1 },
+        scrollTrigger: { trigger: hs, start: 'top top', end: () => '+=' + dist(), pin: true, scrub: 0.25, invalidateOnRefresh: true, anticipatePin: 1 },
       });
     });
 
@@ -519,6 +688,7 @@ export function HomeMotion({ children }: { children: ReactNode }) {
         let wave: Wave | null = null;
         let stage = 0;
         let chipW = 0;
+        let chipH = 0;
         let chipSide = 1;
         let first = true;
         const kv = { v: 0 };
@@ -612,11 +782,15 @@ export function HomeMotion({ children }: { children: ReactNode }) {
           // Readout beside the head (desktop): toward the panel centre in the gaps, toward
           // the photo side near a node, so it never sits on the text.
           if (chip && chipX && chipY && chipO) {
-            if (!chipW) chipW = chip.offsetWidth;
+            // measured once per stage label / refresh, not per frame
+            if (!chipW) {
+              chipW = chip.offsetWidth;
+              chipH = chip.offsetHeight;
+            }
             const dx = tip.x - w.cx;
             chipSide = Math.abs(dx) > 48 ? (dx > 0 ? -1 : 1) : nearK % 2 === 0 ? 1 : -1;
             const x = chipSide > 0 ? tip.x + 34 : tip.x - 34 - chipW;
-            const cy = tip.y - chip.offsetHeight / 2;
+            const cy = tip.y - chipH / 2;
             if (first) gsap.set(chip, { x, y: cy });
             chipX(x);
             chipY(cy);
@@ -636,10 +810,11 @@ export function HomeMotion({ children }: { children: ReactNode }) {
           trigger: tlWrap,
           start: 'top 62%',
           end: () => 'top+=' + lastNodeY() + ' 62%',
-          scrub: 0.5,
+          scrub: 0.25,
           invalidateOnRefresh: true,
           onUpdate: (self) => render(self.progress * (wave?.endY ?? 0)),
           onRefresh: (self) => {
+            chipW = 0;
             wave = buildWave(desktop);
             render(self.progress * (wave?.endY ?? 0));
           },
@@ -652,6 +827,7 @@ export function HomeMotion({ children }: { children: ReactNode }) {
           onToggle: (self) => {
             unit.toggleAttribute('data-live', self.isActive);
             svg?.toggleAttribute('data-live', self.isActive);
+            svgFx?.toggleAttribute('data-live', self.isActive);
           },
         });
         tlSteps.forEach((li, i) => {
@@ -659,13 +835,13 @@ export function HomeMotion({ children }: { children: ReactNode }) {
           const med = li.querySelector('[data-tv-tl-media]');
           const leftText = i % 2 === 0;
           if (desktop) {
-            if (txt) gsap.fromTo(txt, { x: leftText ? -40 : 40, opacity: 0 }, { x: 0, opacity: 1, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: li, start: 'top 75%' } });
+            if (txt) gsap.fromTo(txt, { x: leftText ? -40 : 40, opacity: 0 }, { x: 0, opacity: 1, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: li, start: 'top 75%' , once: true } });
             if (med)
-              gsap.fromTo(med, { x: leftText ? 40 : -40, opacity: 0, scale: 0.96 }, { x: 0, opacity: 1, scale: 1, duration: 1.1, ease: 'power3.out', scrollTrigger: { trigger: li, start: 'top 75%' } });
+              gsap.fromTo(med, { x: leftText ? 40 : -40, opacity: 0, scale: 0.96 }, { x: 0, opacity: 1, scale: 1, duration: 1.1, ease: 'power3.out', scrollTrigger: { trigger: li, start: 'top 75%' , once: true } });
           } else {
-            if (txt) gsap.fromTo(txt, { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: li, start: 'top 80%' } });
+            if (txt) gsap.fromTo(txt, { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: li, start: 'top 80%' , once: true } });
             if (med)
-              gsap.fromTo(med, { y: 40, opacity: 0, scale: 0.96 }, { y: 0, opacity: 1, scale: 1, duration: 1.1, ease: 'power3.out', scrollTrigger: { trigger: li, start: 'top 80%' } });
+              gsap.fromTo(med, { y: 40, opacity: 0, scale: 0.96 }, { y: 0, opacity: 1, scale: 1, duration: 1.1, ease: 'power3.out', scrollTrigger: { trigger: li, start: 'top 80%' , once: true } });
           }
         });
         // Tweens started from scroll callbacks are not owned by the matchMedia context.
@@ -685,6 +861,7 @@ export function HomeMotion({ children }: { children: ReactNode }) {
           nodes.forEach((n) => n.removeAttribute('data-active'));
           unit.removeAttribute('data-live');
           svg?.removeAttribute('data-live');
+          svgFx?.removeAttribute('data-live');
           unit.style.transform = '';
           gsap.set(unit, { clearProps: 'opacity' });
           clearWave();
@@ -697,10 +874,17 @@ export function HomeMotion({ children }: { children: ReactNode }) {
       q('[data-tv-spot]').forEach((card) => {
         const glow = card.querySelector<HTMLElement>('[data-tv-spot-glow]');
         if (!glow) return;
+        // Card box cached while the pointer is over it; a scroll moves it, so re-measure then.
+        let box: DOMRect | null = null;
+        const drop = () => {
+          box = null;
+        };
+        on(card, 'mouseenter', drop);
+        onWin('scroll', drop);
         on(card, 'mousemove', (e) => {
-          const r = card.getBoundingClientRect();
-          glow.style.setProperty('--mx', e.clientX - r.left + 'px');
-          glow.style.setProperty('--my', e.clientY - r.top + 'px');
+          if (!box) box = card.getBoundingClientRect();
+          glow.style.setProperty('--mx', e.clientX - box.left + 'px');
+          glow.style.setProperty('--my', e.clientY - box.top + 'px');
           glow.style.opacity = '1';
         });
         on(card, 'mouseleave', () => {

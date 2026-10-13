@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, type ReactNode } from 'react';
-import { useTvMotion, initPageCore, layoutMetrics, type TvMotionContext } from '@/lib/motion';
+import { useTvMotion, initPageCore, introCovered, layoutMetrics, afterReveal, whenRevealed, type TvMotionContext } from '@/lib/motion';
 import { FILM_BEATS } from './filmBeats';
 
 /**
@@ -29,15 +29,16 @@ export function PortfolioMotion({ children }: { children: ReactNode }) {
     // Capability range fill
     const range = q('[data-tv-range]')[0];
     const fill = q('[data-tv-range-fill]')[0];
+    // Full-width fill slid in from the left inside the clipped pill track (no layout per frame).
     if (range && fill)
-      gsap.fromTo(fill, { width: '0%' }, { width: '100%', duration: 1.6, ease: 'expo.out', scrollTrigger: { trigger: range, start: 'top 85%' } });
+      gsap.fromTo(fill, { xPercent: -100 }, { xPercent: 0, duration: 1.6, ease: 'expo.out', scrollTrigger: { trigger: range, start: 'top 85%', once: true } });
 
     // Segments: image parallax + settle-in
     q('[data-tv-seg]').forEach((seg) => {
       const img = seg.querySelector('[data-tv-seg-img]');
       if (img)
         gsap.fromTo(img, { yPercent: -6 }, { yPercent: 6, ease: 'none', scrollTrigger: { trigger: seg, start: 'top bottom', end: 'bottom top', scrub: true } });
-      gsap.fromTo(seg, { scale: 0.96, opacity: 0.6 }, { scale: 1, opacity: 1, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: seg, start: 'top 80%' } });
+      gsap.fromTo(seg, { scale: 0.96, opacity: 0.6 }, { scale: 1, opacity: 1, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: seg, start: 'top 80%', once: true } });
     });
 
     return filmCleanup;
@@ -100,13 +101,18 @@ function buildFilmStory({ gsap, ScrollTrigger, lenis, q }: TvMotionContext): () 
   const black = q('[data-tv-film-black]')[0];
   if (!film || !copy || !media || !video || !story || !skip || !grain || !black) return () => {};
 
-  // The markup only preloads metadata (static fallback visitors may never press Play).
-  video.preload = 'auto';
+  // The markup only preloads metadata; the whole clip is buffered once the story engages
+  // (engage() sets preload = 'auto'), never eagerly.
   // A failed <source> fires `error` on the source element, not on the video.
   const lastSource = video.querySelector('source:last-of-type');
 
   // Intro: media card rises in with the hero (mockup timeline position 0.4)
-  gsap.fromTo(media, { y: 100, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1.3, ease: 'expo.out', delay: 0.4 });
+  // (held until a page transition has opened the shutter, like the other intros). On a first load
+  // the card is already painted at the CSS offset (FilmHero.module.css), so it only rises.
+  media.style.animation = 'none'; // cancel the CSS no-JS fallback
+  if (introCovered())
+    afterReveal(gsap.fromTo(media, { y: 100, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1.3, ease: 'expo.out', delay: 0.4 }));
+  else gsap.fromTo(media, { y: 100 }, { y: 0, duration: 1.3, ease: 'expo.out', delay: 0.4 });
 
   // In motion mode the live region narrates the current beat; the list itself is visual only.
   beatList?.setAttribute('aria-hidden', 'true');
@@ -149,9 +155,110 @@ function buildFilmStory({ gsap, ScrollTrigger, lenis, q }: TvMotionContext): () 
   let rateTween: gsap.core.Tween | null = null;
   let stageTl: gsap.core.Timeline | null = null;
 
+  /* ---------- card ⇄ full screen as a clip window ----------
+   * The card (content width, 40svh, 4svh up, radius 28) expands to the full frame and shrinks
+   * back. Instead of tweening the card's width/height/bottom/radius (layout + a re-raster of the
+   * graded video every frame), the card is laid out full screen for the move and a clip-path
+   * window is animated over it with the same ease. The video gets the object-fit: cover scale it
+   * would have at the window's size and the shade is stretched onto the window (independent
+   * `translate`/`scale` properties, which compose with the push-in transform); "Play film" stays
+   * centred on the window. Black, dim, grain and the closing text are flat or hidden during the move. */
+  const shade = media.querySelector<HTMLElement>(':scope > [class*="_shade_"]');
+  const win = { p: 0, W: 0, H: 0, content: 0 };
+  const measureWin = () => {
+    win.W = film.clientWidth;
+    win.H = film.clientHeight;
+    win.content = layoutMetrics(film).content;
+  };
+  const applyWin = () => {
+    const { p, W, H } = win;
+    const w = win.content + (W - win.content) * p;
+    const h = H * (0.4 + 0.6 * p);
+    const b = H * 0.04 * (1 - p);
+    const r = 28 * (1 - p);
+    const side = (W - w) / 2;
+    const top = H - h - b;
+    media.style.clipPath = `inset(${top.toFixed(2)}px ${side.toFixed(2)}px ${b.toFixed(2)}px round ${r.toFixed(2)}px)`;
+    const ty = top + h / 2 - H / 2;
+    const vw = video.videoWidth || 16;
+    const vh = video.videoHeight || 9;
+    // the video box at its full-frame cover size, so object-fit never crops inside it
+    const c = Math.max(W / vw, H / vh);
+    Object.assign(video.style, {
+      width: vw * c + 'px',
+      height: vh * c + 'px',
+      left: (W - vw * c) / 2 + 'px',
+      top: (H - vh * c) / 2 + 'px',
+      maxWidth: 'none', // global img/video max-width: 100% would cap it
+      right: 'auto',
+      bottom: 'auto',
+    });
+    video.style.translate = `0px ${ty.toFixed(2)}px`;
+    video.style.scale = (Math.max(w / vw, h / vh) / Math.max(W / vw, H / vh)).toFixed(5);
+    if (shade) {
+      shade.style.translate = `0px ${ty.toFixed(2)}px`;
+      shade.style.scale = `${(w / W).toFixed(5)} ${(h / H).toFixed(5)}`;
+    }
+    if (replay) replay.style.translate = `-50% calc(-50% + ${ty.toFixed(2)}px)`;
+  };
+  const clearWin = () => {
+    media.style.clipPath = '';
+    video.style.translate = video.style.scale = '';
+    video.style.width = video.style.height = video.style.left = video.style.top = video.style.right = video.style.bottom = video.style.maxWidth = '';
+    if (shade) shade.style.translate = shade.style.scale = '';
+    if (replay) replay.style.translate = '';
+  };
+  /** Lay the card out full screen (the move's end state) with the window at its current size. */
+  const openWin = () => {
+    measureWin();
+    gsap.set(media, { width: '100%', height: '100%', bottom: 0, borderRadius: 0 });
+    applyWin();
+  };
+
+  /** will-change for the length of a tween only (blur on the captions and the title card). */
+  const layerDuring = (el: Element) => ({
+    onStart: () => void ((el as HTMLElement).style.willChange = 'filter, opacity, transform'),
+    onComplete: () => void ((el as HTMLElement).style.willChange = ''),
+    onInterrupt: () => void ((el as HTMLElement).style.willChange = ''),
+  });
+  /** Caption tracking 0 → -.035em, written in .0025em steps (each step re-lays out the text). */
+  const tracking = new Map<Element, { v: number; last: number }>();
+  const trackIn = (el: HTMLElement, delay: number) => {
+    let t = tracking.get(el);
+    if (!t) tracking.set(el, (t = { v: 0, last: NaN }));
+    gsap.killTweensOf(t);
+    t.v = 0;
+    t.last = 0;
+    el.style.letterSpacing = '0em';
+    const tt = t;
+    gsap.to(tt, {
+      v: -0.035,
+      duration: 1.1,
+      delay,
+      ease: 'power2.out',
+      onUpdate: () => {
+        const q = Math.round(tt.v / 0.0025) * 0.0025;
+        if (q !== tt.last) {
+          tt.last = q;
+          el.style.letterSpacing = q.toFixed(4) + 'em';
+        }
+      },
+      onComplete: () => void (el.style.letterSpacing = '-0.035em'),
+    });
+  };
+
   /* ---------- playback rate ---------- */
   const showRate = () => {
     if (rateEl) rateEl.textContent = video.playbackRate.toFixed(1) + '×';
+  };
+  // The eased rate is applied in 0.1 steps (what the readout shows): each playbackRate write
+  // costs the media pipeline work, and smaller steps are not visible.
+  const rate = { v: 1 };
+  const setRate = (v: number) => {
+    const q = Math.round(v * 10) / 10;
+    try {
+      if (q !== video.playbackRate) video.playbackRate = q;
+    } catch {}
   };
   const bump = (delta: number) => {
     const now = performance.now();
@@ -159,11 +266,20 @@ function buildFilmStory({ gsap, ScrollTrigger, lenis, q }: TvMotionContext): () 
     lastInput = now;
     const target = Math.min(4, 1 + Math.abs(delta) / dt / 900);
     rateTween?.kill();
-    try {
-      if (target > video.playbackRate) video.playbackRate = target;
-    } catch {}
+    if (target > rate.v) {
+      rate.v = target;
+      setRate(target);
+    }
     showRate();
-    rateTween = gsap.to(video, { playbackRate: 1, duration: 1.2, ease: 'power2.out', onUpdate: showRate });
+    rateTween = gsap.to(rate, {
+      v: 1,
+      duration: 1.2,
+      ease: 'power2.out',
+      onUpdate: () => {
+        setRate(rate.v);
+        showRate();
+      },
+    });
   };
 
   /* ---------- captions ---------- */
@@ -171,7 +287,7 @@ function buildFilmStory({ gsap, ScrollTrigger, lenis, q }: TvMotionContext): () 
   // outgoing has mostly cleared and resolves blur 8px -> 0, y 12 -> 0, tracking 0 -> -.035em.
   const showBeat = (idx: number) => {
     const prev = current >= 0 ? beats[current] : undefined;
-    if (prev) gsap.to(prev, { opacity: 0, y: -10, filter: 'blur(4px)', duration: 0.6, ease: 'power1.in', overwrite: true });
+    if (prev) gsap.to(prev, { opacity: 0, y: -10, filter: 'blur(4px)', duration: 0.6, ease: 'power1.in', overwrite: true, ...layerDuring(prev) });
     current = idx;
     const next = idx >= 0 ? beats[idx] : undefined;
     if (next) {
@@ -179,20 +295,24 @@ function buildFilmStory({ gsap, ScrollTrigger, lenis, q }: TvMotionContext): () 
       gsap.fromTo(
         next,
         { opacity: 0, y: 12, filter: 'blur(8px)' },
-        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.9, delay, ease: 'power2.out', overwrite: true },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.9, delay, ease: 'power2.out', overwrite: true, ...layerDuring(next) },
       );
-      const words = next.querySelector('[data-tv-film-beat-text]');
-      if (words) gsap.fromTo(words, { letterSpacing: '0em' }, { letterSpacing: '-0.035em', duration: 1.1, delay, ease: 'power2.out', overwrite: true });
+      const words = next.querySelector<HTMLElement>('[data-tv-film-beat-text]');
+      if (words) trackIn(words, delay);
       if (live) live.textContent = FILM_BEATS[idx].text;
     }
   };
   // One ticker for the push-in and the beats.
+  let lastF = -1;
   const tick = () => {
     if (phase !== 'locked') return;
     const d = video.duration;
     if (!Number.isFinite(d) || d <= 0) return;
     const f = Math.min(1, video.currentTime / d);
-    gsap.set(video, { scale: 1 + PUSH_IN * f });
+    if (f !== lastF) {
+      lastF = f;
+      gsap.set(video, { scale: 1 + PUSH_IN * f });
+    }
     if (closing || !gateOpen) return;
     let idx = -1;
     FILM_BEATS.forEach((b, i) => {
@@ -250,7 +370,9 @@ function buildFilmStory({ gsap, ScrollTrigger, lenis, q }: TvMotionContext): () 
     ambient = false;
     engagedAt = performance.now();
     clearTimeout(autoTimer);
+    video.preload = 'auto'; // buffer the whole clip only now that it will play
     addInput(); // listeners are removed on release; re-arm them for a replay
+    setBlocking(true);
     lenis?.scrollTo(0, { immediate: true, force: true });
     lenis?.stop();
     if (window.scrollY !== 0) window.scrollTo(0, 0);
@@ -271,11 +393,13 @@ function buildFilmStory({ gsap, ScrollTrigger, lenis, q }: TvMotionContext): () 
     // Reset the stage, then hold the clip on its first frame under black.
     video.pause();
     video.loop = false;
+    rate.v = 1;
     try {
       video.currentTime = 0;
       video.playbackRate = 1;
     } catch {}
     showRate();
+    lastF = -1;
     gsap.set(video, { scale: 1 });
     gsap.set(beats, { opacity: 0, y: 12, filter: 'blur(8px)' });
     if (text) gsap.set(text, { opacity: 0 });
@@ -283,19 +407,18 @@ function buildFilmStory({ gsap, ScrollTrigger, lenis, q }: TvMotionContext): () 
     if (titleCard) gsap.set(titleCard, { opacity: 0, filter: 'blur(6px)' });
 
     stageTl?.kill();
+    openWin();
     stageTl = gsap
       .timeline()
       .to(copy, { y: -120, opacity: 0, duration: 0.7, ease: 'power2.in' }, 0)
       .to(
-        media,
+        win,
         {
-          width: () => film.clientWidth,
-          height: () => film.clientHeight,
-          bottom: 0,
-          borderRadius: 0,
+          p: 1,
           duration: 1,
           ease: 'expo.inOut',
-          onComplete: () => gsap.set(media, { width: '100%', height: '100%' }), // follows resizes
+          onUpdate: applyWin,
+          onComplete: clearWin, // full screen at 100% / 100%: follows resizes
         },
         0,
       )
@@ -306,7 +429,7 @@ function buildFilmStory({ gsap, ScrollTrigger, lenis, q }: TvMotionContext): () 
       .to(black, { opacity: 0, duration: 1.2, ease: 'power1.inOut' }, FADE_UP_AT);
     if (titleCard)
       stageTl
-        .to(titleCard, { opacity: 1, filter: 'blur(0px)', duration: 0.8, ease: 'power2.out' }, TITLE_IN_AT)
+        .to(titleCard, { opacity: 1, filter: 'blur(0px)', duration: 0.8, ease: 'power2.out', ...layerDuring(titleCard) }, TITLE_IN_AT)
         .to(titleCard, { opacity: 0, y: -8, duration: 0.6, ease: 'power1.in' }, TITLE_OUT_AT - 0.1)
         .set(titleCard, { y: 0 }, TITLE_OUT_AT + 0.6);
     stageTl.add(() => {
@@ -335,6 +458,7 @@ function buildFilmStory({ gsap, ScrollTrigger, lenis, q }: TvMotionContext): () 
   /** Give the page back: scrolling, nav, focus order. Runs when the frame comes back from black. */
   function unlock() {
     unlockPending = false;
+    swallowing(false);
     window.removeEventListener('scroll', onScrollLocked);
     root.classList.remove(NAV_HIDDEN);
     film.removeAttribute('data-story');
@@ -363,6 +487,7 @@ function buildFilmStory({ gsap, ScrollTrigger, lenis, q }: TvMotionContext): () 
     skip.hidden = true;
     if (live) live.textContent = '';
     rateTween?.kill();
+    rate.v = 1;
     try {
       video.playbackRate = 1;
     } catch {}
@@ -373,6 +498,7 @@ function buildFilmStory({ gsap, ScrollTrigger, lenis, q }: TvMotionContext): () 
       return;
     }
     unlockPending = true;
+    swallowing(true);
 
     // Ending: caption dissolves -> dip to black (.4s hold) -> card shrinks, and the
     // clip comes back as the muted ambient loop under "Play film".
@@ -396,15 +522,20 @@ function buildFilmStory({ gsap, ScrollTrigger, lenis, q }: TvMotionContext): () 
       .to(story, { autoAlpha: 0, duration: 0.2 }, UNLOCK_AT)
       .to(grain, { opacity: 0, duration: 0.2 }, UNLOCK_AT)
       .to(
-        media,
+        win,
         {
-          width: () => layoutMetrics(film).content,
-          height: H * 0.4,
-          bottom: H * 0.04,
-          borderRadius: 28,
+          p: 0,
           duration: 1,
           ease: 'expo.inOut',
-          onComplete: () => gsap.set(media, { clearProps: 'width,height,bottom,borderRadius' }),
+          onStart: () => {
+            openWin();
+            win.H = H;
+          },
+          onUpdate: applyWin,
+          onComplete: () => {
+            clearWin();
+            gsap.set(media, { clearProps: 'width,height,bottom,borderRadius' });
+          },
         },
         UNLOCK_AT + 0.05,
       )
@@ -494,29 +625,56 @@ function buildFilmStory({ gsap, ScrollTrigger, lenis, q }: TvMotionContext): () 
   // Deep-linked visit: engage on first arrival back at the top.
   const onScrollIdle = () => {
     if (phase !== 'idle') return;
+    setBlocking(atTop());
     if (!atTop()) away = true;
     else if (away) engage();
   };
 
+  // Non-passive wheel/touchmove listeners make every scroll wait for the main thread, so they are
+  // attached only while they can cancel something: while locked, and while idle at the very top
+  // (where a downward scroll engages the story). Anywhere else on the page they are not attached.
   const opts: AddEventListenerOptions = { passive: false };
+  let blocking = false;
+  function setBlocking(on: boolean) {
+    if (on === blocking) return;
+    blocking = on;
+    if (on) {
+      window.addEventListener('wheel', onWheel, opts);
+      window.addEventListener('touchmove', onTouchMove, opts);
+    } else {
+      window.removeEventListener('wheel', onWheel, opts);
+      window.removeEventListener('touchmove', onTouchMove, opts);
+    }
+  }
   function addInput() {
-    window.addEventListener('wheel', onWheel, opts);
     window.addEventListener('touchstart', onTouchStart, { passive: true });
-    window.addEventListener('touchmove', onTouchMove, opts);
     window.addEventListener('keydown', onKey);
     window.addEventListener('scroll', onScrollIdle, { passive: true });
+    setBlocking(phase === 'locked' || atTop());
   }
   function removeInput() {
-    window.removeEventListener('wheel', onWheel, opts);
+    setBlocking(false);
     window.removeEventListener('touchstart', onTouchStart);
-    window.removeEventListener('touchmove', onTouchMove, opts);
     window.removeEventListener('keydown', onKey);
     window.removeEventListener('scroll', onScrollIdle);
   }
-  // While the ending dips to black, input stays swallowed (Lenis is still stopped; this blocks touch/keys).
+  // While the ending dips to black, input stays swallowed (Lenis is still stopped; this blocks touch).
+  // Attached only for that window (release → unlock).
   const swallow = (e: Event) => {
     if (unlockPending && e.cancelable) e.preventDefault();
   };
+  let swallowOn = false;
+  function swallowing(on: boolean) {
+    if (on === swallowOn) return;
+    swallowOn = on;
+    if (on) {
+      window.addEventListener('wheel', swallow, opts);
+      window.addEventListener('touchmove', swallow, opts);
+    } else {
+      window.removeEventListener('wheel', swallow, opts);
+      window.removeEventListener('touchmove', swallow, opts);
+    }
+  }
 
   const onSkip = () => release();
   const onReplay = () => {
@@ -539,9 +697,18 @@ function buildFilmStory({ gsap, ScrollTrigger, lenis, q }: TvMotionContext): () 
     if ((phase === 'locked' && !closing && !video.ended && video.currentTime > 0) || (phase === 'done' && ambient && mediaVisible)) play();
   };
 
-  addInput();
-  window.addEventListener('wheel', swallow, opts);
-  window.addEventListener('touchmove', swallow, opts);
+  // The film never engages under a page-transition shutter: scroll input and the auto-engage timer
+  // start once the shutter opens (immediately on a full page load).
+  let disposed = false;
+  whenRevealed().then(() => {
+    if (disposed) return;
+    addInput();
+    if (!away)
+      autoTimer = setTimeout(() => {
+        if (atTop()) engage();
+        else away = true;
+      }, AUTO_ENGAGE_MS);
+  });
   skip.addEventListener('click', onSkip);
   replay?.addEventListener('click', onReplay);
   video.addEventListener('ended', onEnded);
@@ -549,20 +716,15 @@ function buildFilmStory({ gsap, ScrollTrigger, lenis, q }: TvMotionContext): () 
   video.addEventListener('error', onError);
   lastSource?.addEventListener('error', onError);
   document.addEventListener('visibilitychange', onVisibility);
-  if (!away)
-    autoTimer = setTimeout(() => {
-      if (atTop()) engage();
-      else away = true;
-    }, AUTO_ENGAGE_MS);
 
   return () => {
+    disposed = true;
     clearTimeout(autoTimer);
     clearTimeout(stallTimer);
     release(false); // navigating away mid-lock: give scrolling and the nav back
     if (unlockPending) unlock(); // navigating away during the ending
     removeInput();
-    window.removeEventListener('wheel', swallow, opts);
-    window.removeEventListener('touchmove', swallow, opts);
+    swallowing(false);
     window.removeEventListener('scroll', onScrollLocked);
     skip.removeEventListener('click', onSkip);
     replay?.removeEventListener('click', onReplay);
@@ -579,6 +741,14 @@ function buildFilmStory({ gsap, ScrollTrigger, lenis, q }: TvMotionContext): () 
     gsap.ticker.remove(tick);
     rateTween?.kill();
     stageTl?.kill();
+    clearWin();
+    tracking.forEach((t) => gsap.killTweensOf(t));
+    beats.forEach((b) => {
+      b.style.willChange = '';
+      const words = b.querySelector<HTMLElement>('[data-tv-film-beat-text]');
+      if (words) words.style.letterSpacing = '';
+    });
+    if (titleCard) titleCard.style.willChange = '';
     skip.hidden = true;
     film.removeAttribute('data-story');
     beatList?.removeAttribute('aria-hidden');

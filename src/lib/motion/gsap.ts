@@ -12,6 +12,8 @@ import { useGSAP } from '@gsap/react';
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger, useGSAP);
   ScrollTrigger.config({ ignoreMobileResize: true });
+  // After a long main-thread stall (tab switch, GC) jump at most 33ms instead of replaying the gap.
+  gsap.ticker.lagSmoothing(500, 33);
   // Refresh triggers in page order, not creation order. Helpers (initPageCore) run before a
   // page builds its pins, so without this a trigger below a pin (Home stats under the hero pin)
   // is measured without that pin's spacing and fires early. Runs before every refresh, so pins

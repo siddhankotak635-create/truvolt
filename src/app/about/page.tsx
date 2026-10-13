@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { CtaBand } from '@/components/shared';
+import { CtaBand } from '@/components/shared/CtaBand';
 import { AboutMotion } from '@/components/about/AboutMotion';
 import { AboutHero, Legacy, StandardSection, WhoWeAre } from '@/components/about/AboutSections';
 import { images } from '@/data/assets';

@@ -9,12 +9,12 @@ The mockups in `../Truvolt Site Refactor (1)/*.dc.html` are the source of truth.
 ```
 src/
   app/
-    layout.tsx            html/fonts, skip link, <MotionProvider><Header/><main/><Footer/></MotionProvider>
+    layout.tsx            html/fonts, skip link, <MotionProvider><Header/><main/><Footer/><PageTransition/></MotionProvider>
     fonts.ts              next/font: --font-sans (Schibsted Grotesk), --font-mono (JetBrains Mono)
     page.tsx              /
     about/ products/ portfolio/ quality/ contact/   (/products is one page for all six lines; see section 11)
     not-found.tsx         404 (+ not-found.module.css)
-  components/shared/      Header, Footer (+ FooterDoodle), Button, Eyebrow, CtaBand, ProductCard, StandardsMatrix (+ index.ts)
+  components/shared/      Header, Footer (+ FooterDoodle), Button, Eyebrow, CtaBand, ProductCard, StandardsMatrix, PageTransition (+ index.ts)
   components/<page>/      page-owned sections and motion components (page tasks)
   lib/motion/             MotionProvider, useTvMotion, helpers, MotionScope, state (BP), gsap (+ index.ts)
   data/assets.ts          images (local /images/*, with intrinsic sizes), logos, media.heroVideo
@@ -217,7 +217,8 @@ Each takes `(scope, opts?)`, must be called inside a setup, and is idempotent. U
 | helper | hook | behaviour (mockup values) |
 |---|---|---|
 | `splitWords(scope)` | `[data-tv-split]` | wraps words in mask spans; inner `[data-tv-word]` starts at `translateY(110%)`. Original DOM restored on revert; `aria-label` set to the full text |
-| `defaultIntro(scope, {delay, stagger, also})` | `[data-tv-split]`, `#top [data-tv-reveal]` | words → y:0, 1.1s, stagger .04, power4.out at 0.1s; then reveals from {y:20, opacity:0}, .9s, stagger .1. Returns the timeline |
+| `defaultIntro(scope, {delay, stagger, also})` | `[data-tv-split]`, `#top [data-tv-reveal]` | words → y:0, 1.1s, stagger .04, power4.out at 0.1s; then reveals from {y:20, opacity:0}, .9s, stagger .1. Returns the timeline. Held by the reveal gate after a page transition (section 12) |
+| `afterReveal(tween)` | | pauses an intro tween/timeline while a page transition holds the reveal gate and plays it as the shutter opens; no-op otherwise. Use it for any custom hero intro (section 12) |
 | `initReveal(scope, {y, start, selector})` | `[data-tv-reveal]` outside `#top` | from {y:36, opacity:0}, 1s power3.out, `top 88%` (Home mockup uses `y: 40`) |
 | `initWords(scope)` | `[data-tv-words]` | masked line reveal: the paragraph is split into its rendered lines (word spans grouped by `offsetTop`), each line in an overflow-hidden mask rises `yPercent 100 → 0` with opacity 0 → 1, stagger .08, .9s power3.out, at `top 85%`. Plays once (not scrubbed) and ends fully opaque. Re-splits on resize (debounced 200ms, only when the paragraph width changed; an already-played paragraph re-splits at rest). Inline markup is flattened to text while split; the original nodes are restored on revert. Reduced motion: untouched |
 | `initParallax(scope)` | `[data-tv-parallax="0.1"]` | yPercent −amt/2 → +amt/2 (amt = value×100), scrubbed against the **parent** (top bottom → bottom top). Give the image `inset:-8% 0; height:116%` |
@@ -252,11 +253,12 @@ Or from components, use `useMotion().lenis`. `useMotion()` also gives `scrollTo(
 |---|---|
 | `data-tv-magnet` | fine pointer only. Fill circle sweeps scale 0 → 30 (.6s power3.out) on enter and back (.5s power3.in) on leave. The fill is the accent, or the light accent when the element background is `#DCE7F3`. The element follows the pointer at x·.25 / y·.35 (.4s) and springs back with `elastic.out(1,0.4)` (.6s). Works for nodes added later (event delegation). With `<Button magnet>` the fill span is pre-rendered |
 | `→` arrow | any `a`/`button` whose direct child `span` is `→` (or `[data-tv-arrow]`) nudges `x:4` (.35s) on hover |
-| `a[href^="#"]` and same-path `/path#x` links | Lenis `scrollTo(target, {offset:-100})`; override with `data-offset="-20"`; opt out with `data-native`. Works for plain `<a>`, `next/link` and `<Button href="#x">`: the handler runs in the window **capture** phase and calls `preventDefault`, so `next/link` stands down (your own `Link onClick` still runs). Cross-page links (`/#range` from `/about`) navigate normally, then the provider scrolls to the hash with offset −100 after the route change |
+| `a[href^="#"]` and same-path `/path#x` links | Lenis `scrollTo(target, {offset:-100})`; override with `data-offset="-20"`; opt out with `data-native`. Works for plain `<a>`, `next/link` and `<Button href="#x">`: the handler runs in the window **capture** phase and calls `preventDefault`, so `next/link` stands down (your own `Link onClick` still runs). Cross-page links (`/#range` from `/about`) go through the page transition, then the provider scrolls to the hash with offset −100 under the cover |
+| any internal link to **another pathname** | page transition (section 12). Opt out with `data-native` or `target="_blank"` |
 | `data-tv-nav`, `data-tv-navlink`, `data-tv-nav-ind` | Header internals (indicator, hide on scroll past 160px, scrolled shadow past 80px) |
 | `data-tv-root` | the `<main>` wrapper |
 
-Route change:
+Route change (under the page-transition shutter, section 12):
 - scroll to 0 (or to the URL hash, offset −100);
 - close the mobile sheet;
 - `ScrollTrigger.refresh()` after two frames and again after 600ms.
@@ -323,3 +325,42 @@ One route for all six product lines, as in `Truvolt Product.dc.html`. There is n
 - **Switcher.** In normal flow, not sticky. `role="tablist"` with `<a role="tab" aria-selected aria-controls="product-panel">` pills (real hrefs, so open-in-new-tab works), roving `tabIndex`, and ← → Home End. It animates its own intro once per page load.
 - **Hero actions** ("Request a Proposal", "Specifications") are buttons that call `useMotion().scrollTo('#quote' | '#specs')`. They do not touch the hash, which belongs to the switcher.
 - **No Quality content.** The test sequence and the standards matrix live only on `/quality`. Products carries one line in the quote card: "Every unit is routine-tested before dispatch. See our test sequence and standards →" linking to `/quality`.
+
+## 12. Page transitions ("Ruled Shutter")
+
+Chosen in Task 21 (direction A; research, references and prototype in `.superpowers/sdd/transitions/`). Ten ink slats close over the page top to bottom, the destination name and a `000 → 066 kV` readout with an accent hairline play on the closed shutter (the Home preloader in miniature), then the slats open in the same wave and the new page's intro plays. About 1.2s per navigation; back/forward about 0.6s.
+
+**Pieces**
+- `components/shared/PageTransition.tsx` (+ `.module.css`): the layer, mounted once in `app/layout.tsx` outside `<main>`. Fixed, `z-index: 150` (above the nav 50 and the preloader 100, below the skip link 200), `aria-hidden`, no focusable content; it takes pointer events only while active. It registers an imperative API on `motionState.shutter` (`close(pathname)`, `cover(pathname)`, `open(onReveal)`, `announce(pathname)`) and owns a visually hidden `aria-live="polite"` region.
+- Labels come from `nav` in `data/site.ts` via `routeLabel(pathname)`: nav label + position (`/about` → "Company", "02 / 06"). Unknown paths show "Truvolt".
+- `lib/motion/MotionProvider.tsx` runs it: link interception, `router.push`, commit wait, Lenis, focus.
+- `lib/motion/state.ts`: `motionState.transitioning` and the **reveal gate** (`holdReveal`, `releaseReveal`, `whenRevealed()`, `isRevealPending()`).
+
+**Which clicks transition.** A window capture-phase handler (registered after the anchor handler) takes plain left clicks, no modifier keys, on a same-origin `http(s)` link whose **pathname differs** from the current one, without `target` (other than `_self`), `download` or `data-native`, and not a static file (`/map.html`, PDFs). It calls `preventDefault`, so `next/link` stands down. Everything else keeps its old behaviour: same-path `#hash` links (Lenis scroll), `/products#key` switches (ProductsExplorer, no transition), `mailto:`/`tel:`/external links. Programmatic: `useMotion().navigate(href)`. A click during a transition is queued; the latest one wins. Hovering or focusing an internal link calls `router.prefetch`.
+
+**Sequence** (`runTransition` in MotionProvider)
+1. `motionState.transitioning = true`, `holdReveal()`, `lenis.stop()`, close the mobile sheet. The menu effect does not restart Lenis while `transitioning` is set.
+2. `shutter.close(pathname)`: slats `scaleY 0 → 1`, .32s power3.in, stagger .02 (covered at .5s); label from .4s (name rises .36s power4.out, kV + hairline .22s). `close` resolves when covered.
+3. `router.push(href, { scroll: false })`, then wait for the commit (the provider's route effect resolves it, after it has reset scroll or jumped to the hash). Safety cap 8s.
+4. Settle: two frames (useTvMotion setups run after `fonts.ready`), then fonts and in-view `<img>` decode, capped at 250ms.
+5. `shutter.open(reveal)`: waits for the label (.64s), name out, slats `scaleY 1 → 0` from the bottom edge, .34s power3.out, stagger .018. At .18s into the open: `transitioning = false`, `lenis.start()`, `releaseReveal()`, so intros start as the first slats clear.
+6. Focus moves to `<main id="main">` (`preventScroll`), the live region announces "<Name> page".
+
+**Back/forward.** Next commits the route itself, so there is no close: on `popstate` to a different pathname the shutter is shown closed at once (`cover`), then steps 3–6 run (reveal only). Hash-only popstate (the products switcher) is ignored.
+
+**First load.** No transition. The Home preloader is unchanged. Arriving at Home *through* a transition skips the preloader (the shutter played its part) and marks it as played for the session.
+
+**Reduced motion.** No shutter: `<main>` fades out (.15s), the route commits, then fades in (.2s). Back/forward: fade in only.
+
+**Page intros must wait for the reveal.** Pages mount under the closed shutter, so anything that plays on mount would be missed.
+- `defaultIntro` (and so `initPageCore` / `MotionScope`) is gated automatically.
+- Custom intros wrap their tween/timeline in `afterReveal(...)`: done in HomeMotion (hero intro), ProductMotion (intro mode), ProductSwitcher and PortfolioMotion (film card rise). `fromTo` "from" states still render at once, so nothing flashes.
+- Anything else that must not start under the cover awaits `whenRevealed()`. PortfolioMotion arms the film's scroll input and its auto-engage timer only after the reveal, so the full-screen film never engages under the shutter (and its `lenis.stop()` cannot be undone by the transition's `lenis.start()`).
+- Outside a transition the gate is open: `whenRevealed()` is already resolved and `afterReveal` does nothing.
+
+**ScrollTriggers.** Unchanged: `useTvMotion` reverts on unmount, which now happens under the cover. Verified stable counts per route over repeated navigation (dev handle `__tv.ScrollTrigger.getAll().length`: Home 67, About 17, Products 28, Portfolio 21, Quality 28, Contact 10 at 1440).
+
+**Header.** `surfaceIsDark` skips `[data-tv-transition]`, so the shutter never flips the nav to its dark skin; the active link and indicator update on the pathname change as before.
+
+**Adding a page.** Add it to `nav` in `data/site.ts` for a proper shutter label. Put any custom hero intro through `afterReveal`.
+

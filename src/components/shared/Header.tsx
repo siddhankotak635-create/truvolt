@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { gsap } from '@/lib/motion/gsap';
+import { gsap, ScrollTrigger } from '@/lib/motion/gsap';
 import { useMotion } from '@/lib/motion/MotionProvider';
 import { BP, isReduced } from '@/lib/motion/state';
 import { images } from '@/data/assets';
@@ -20,6 +20,8 @@ export function isNavActive(pathname: string, href: string): boolean {
 }
 
 const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+/** Layout width of the indicator box (Header.module.css .ind); its visible width is scaleX × this. */
+const IND_BASE = 100;
 
 /** Relative luminance (0–1) of an `rgb()/rgba()` string, or null when mostly transparent. */
 function lumaOf(color: string): number | null {
@@ -38,13 +40,15 @@ function lumaOf(color: string): number | null {
  * True when the page surface under the pill's resting position is dark. Walks up from the topmost
  * page element at the pill's centre (skipping the header and media) to the first opaque background.
  * Needs no page markup: dark panels (Flagship/Range, Footprint, Process, Portfolio segments, footer)
- * are detected from their own background colour.
+ * are detected from their own background colour. Only run when the surface under the pill can have
+ * changed (see the skin effect below), never per scroll frame.
  */
 function surfaceIsDark(nav: HTMLElement): boolean | null {
   const x = window.innerWidth / 2;
   const y = nav.offsetTop + nav.offsetHeight / 2; // offsetTop ignores the hide-on-scroll transform
   const stack = document.elementsFromPoint(x, y);
-  const below = stack.find((el) => !el.closest('header'));
+  // skip the header and the page-transition shutter (it covers the page while a route loads)
+  const below = stack.find((el) => !el.closest('header') && !el.closest('[data-tv-transition]'));
   if (!below) return null;
   for (let el: Element | null = below; el; el = el.parentElement) {
     const l = lumaOf(getComputedStyle(el).backgroundColor);
@@ -87,7 +91,8 @@ export function Header() {
     const cs = getComputedStyle(el);
     const pl = parseFloat(cs.paddingLeft) || 0;
     const pr = parseFloat(cs.paddingRight) || 0;
-    const vars = { x: r.left - w.left + pl, width: Math.max(0, r.width - pl - pr), opacity: 1 };
+    // .ind is a fixed 100px box scaled from its left edge (scaleX, not width: no layout per frame)
+    const vars = { x: r.left - w.left + pl, scaleX: Math.max(0, r.width - pl - pr) / IND_BASE, opacity: 1 };
     if (immediate || isReduced()) gsap.set(ind, vars);
     else gsap.to(ind, { ...vars, duration: 0.45, ease: 'power3.out', overwrite: 'auto' });
   }, []);
@@ -119,12 +124,19 @@ export function Header() {
     rest();
   }, [pathname, rest]);
 
-  /* ---------------- light / dark skin from the surface under the pill ---------------- */
+  /* ---------------- light / dark skin from the surface under the pill ----------------
+   * The answer can only change when an opaque surface starts or stops crossing the pill's centre
+   * line. One IntersectionObserver, rooted on that 1px line, watches every element with an opaque
+   * background (found once per route / refresh); any crossing schedules the exact hit test above
+   * for the next frame. Pins, transforms, the leaving preloader and the film card are all seen by
+   * the observer, so there is no per-frame scroll work and no polling. */
   const [onDark, setOnDark] = useState(false);
   useEffect(() => {
     const nav = navRef.current;
     if (!nav) return;
     let raf = 0;
+    let io: IntersectionObserver | null = null;
+    let scanTimer: ReturnType<typeof setTimeout> | undefined;
     const check = () => {
       raf = 0;
       const d = surfaceIsDark(nav);
@@ -133,18 +145,44 @@ export function Header() {
     const queue = () => {
       if (!raf) raf = requestAnimationFrame(check);
     };
-    check();
-    const t = window.setTimeout(check, 700); // after route-change scroll reset and late layout
-    // overlays that leave without a scroll (Home preloader) or pinned scenes: a cheap slow poll
-    const poll = window.setInterval(() => document.visibilityState === 'visible' && queue(), 600);
-    window.addEventListener('scroll', queue, { passive: true });
-    window.addEventListener('resize', queue);
+    const opaque = (el: Element) => {
+      const bg = getComputedStyle(el).backgroundColor;
+      const m = bg.match(/rgba?\(([^)]+)\)/);
+      if (!m) return false;
+      const parts = m[1].split(/[ ,/]+/).filter(Boolean);
+      return parts.length < 4 || Number(parts[3]) >= 0.5;
+    };
+    const watch = () => {
+      io?.disconnect();
+      const y = Math.round(nav.offsetTop + nav.offsetHeight / 2);
+      const h = window.innerHeight;
+      io = new IntersectionObserver(queue, { rootMargin: `${-y}px 0px ${-(h - y - 1)}px 0px`, threshold: 0 });
+      const roots = [document.getElementById('main'), ...Array.from(document.querySelectorAll('footer'))];
+      for (const root of roots) {
+        if (!root) continue;
+        if (opaque(root)) io.observe(root);
+        root.querySelectorAll('*').forEach((el) => {
+          if (!(el instanceof SVGElement) && opaque(el)) io!.observe(el);
+        });
+      }
+      queue();
+    };
+    const rescan = () => {
+      clearTimeout(scanTimer);
+      scanTimer = setTimeout(watch, 60);
+    };
+    watch();
+    const t = window.setTimeout(queue, 700); // after route-change scroll reset and late layout
+    // Layout changes (pins created, product switch, fonts) end in a refresh: re-collect surfaces.
+    ScrollTrigger.addEventListener('refresh', rescan);
+    window.addEventListener('resize', rescan);
     return () => {
       cancelAnimationFrame(raf);
+      clearTimeout(scanTimer);
       window.clearTimeout(t);
-      window.clearInterval(poll);
-      window.removeEventListener('scroll', queue);
-      window.removeEventListener('resize', queue);
+      io?.disconnect();
+      ScrollTrigger.removeEventListener('refresh', rescan);
+      window.removeEventListener('resize', rescan);
     };
   }, [pathname]);
 

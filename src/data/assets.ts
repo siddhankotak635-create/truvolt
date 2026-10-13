@@ -53,31 +53,68 @@ export const images = {
   forExport: img('/images/for-export-markets.jpg', 1280, 853),
 } as const;
 
-/** Client logos (Wikimedia Commons, rasterised to PNG). */
+/**
+ * Client logos (Wikimedia Commons, rasterised to PNG). Sized for the 96px x 220px logo box at 2x
+ * (fit inside 440 x 192) and palette-quantised with sharp; about 28 KB for all six.
+ */
 export const logos = {
-  sail: img('/images/logos/sail.png', 960, 1008),
-  hpcl: img('/images/logos/hpcl.png', 960, 1221),
-  indianoil: img('/images/logos/indianoil.png', 960, 1148),
-  larsenToubro: img('/images/logos/larsen-toubro.png', 960, 960),
-  tataMotors: img('/images/logos/tata-motors.png', 960, 110),
-  apspdcl: img('/images/logos/apspdcl.png', 272, 355),
+  sail: img('/images/logos/sail.png', 183, 192),
+  hpcl: img('/images/logos/hpcl.png', 151, 192),
+  indianoil: img('/images/logos/indianoil.png', 161, 192),
+  larsenToubro: img('/images/logos/larsen-toubro.png', 192, 192),
+  tataMotors: img('/images/logos/tata-motors.png', 440, 50),
+  apspdcl: img('/images/logos/apspdcl.png', 147, 192),
 } as const;
 
 /**
  * Portfolio film, self-hosted from /public/video (faststart mp4, no audio, about 14s).
  * Source: Pexels "Electricians Working at Substation" (id 10151854) by Videas Cl, Pexels licence (free to use).
  * https://www.pexels.com/video/electricians-working-at-substation-10151854/
- * Files: 10151854-hd_1920_1080_24fps.mp4 (9.3 MB) and 10151854-hd_1280_720_24fps.mp4 (5.0 MB);
- * poster: images.pexels.com/videos/10151854/pexels-photo-10151854.jpeg?w=1280.
+ * Files are Pexels' own renditions: 10151854-hd_1280_720_24fps.mp4 (5.0 MB, ~2.8 Mbps) and
+ * 10151854-sd_960_540_24fps.mp4 (2.6 MB, ~1.5 Mbps). The 1920x1080 file (9.3 MB, ~5.3 Mbps) was dropped:
+ * Pexels offers no lower-bitrate 1080p, and in-browser re-encodes at ~2.2 Mbps scored below the 720p.
+ * Poster: images.pexels.com/videos/10151854/pexels-photo-10151854.jpeg?w=1280.
  */
 export const media = {
-  /** 1920x1080, used from 1100px up */
-  heroVideo: '/video/substation-1080.mp4',
-  /** 1280x720, used below 1100px */
-  heroVideoSd: '/video/substation-720.mp4',
+  /** 1280x720, used from 1100px up */
+  heroVideo: '/video/substation-720.mp4',
+  /** 960x540, used below 1100px */
+  heroVideoSd: '/video/substation-540.mp4',
   /** Poster frame for the film (1280x720) */
   heroPoster: '/images/film-poster.jpg',
 } as const;
+
+/** Exact next/image props an above-the-fold image renders with, so getImageProps(spec) yields the same URL. */
+export type CriticalImage = {
+  src: string;
+  width?: number;
+  height?: number;
+  fill?: boolean;
+  sizes?: string;
+};
+
+/** Film poster: FilmHero renders `getImageProps(filmPoster).props.src` as the <video> poster. */
+export const filmPoster: CriticalImage = { src: media.heroPoster, width: 1280, height: 720 };
+
+/**
+ * Each route's above-the-fold image(s), with the props the page renders them with. Pass a spec to
+ * next/image `getImageProps({ ...spec, alt: '' })` and preload `props.srcSet`/`props.sizes` (or
+ * `props.src` when there is no srcSet) to hit the same cache entry as the page.
+ * Quality and Contact open on text-only heroes.
+ */
+export const criticalImageSpecs: Record<string, CriticalImage[]> = {
+  '/': [{ src: images.heroTransformer.src, fill: true, sizes: '100vw' }],
+  '/about': [{ src: images.about1.src, width: images.about1.width, height: images.about1.height, sizes: '100vw' }],
+  '/products': [{ src: images.distribution.src, fill: true, sizes: '(min-width: 1100px) 50vw, 100vw' }],
+  '/portfolio': [filmPoster],
+  '/quality': [],
+  '/contact': [],
+};
+
+/** Route → above-the-fold image src (public paths). See criticalImageSpecs for the render props. */
+export const criticalImages: Record<string, string[]> = Object.fromEntries(
+  Object.entries(criticalImageSpecs).map(([route, list]) => [route, list.map((i) => i.src)]),
+);
 
 export type ImageKey = keyof typeof images;
 export type LogoKey = keyof typeof logos;
